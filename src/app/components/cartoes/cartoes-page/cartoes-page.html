@@ -1,0 +1,89 @@
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Meus Cartões</h1>
+            <p class="text-gray-500">Gerencie seus limites e datas de vencimento</p>
+        </div>
+        <button (click)="openNewCartaoModal()"
+            class="inline-flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm">
+            <lucide-icon [img]="icons.plus" class="w-5 h-5"></lucide-icon>
+            Novo Cartão
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <div *ngFor="let cartao of cartoes$ | async"
+            class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+
+            <div class="h-1.5 w-full" [style.background-color]="cartao.cor"></div>
+
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">{{ cartao.nome }}</h3>
+                        <span class="text-sm text-gray-500 font-medium">{{ cartao.bandeira }}</span>
+                    </div>
+                    <div class="p-2 bg-gray-50 rounded-lg text-gray-400 group-hover:text-primary transition-colors">
+                        <lucide-icon [img]="icons.card" class="w-6 h-6"></lucide-icon>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600">Usado: <span class="font-semibold text-gray-900">{{
+                                formatMoney(cartao.usado) }}</span></span>
+                        <span class="text-gray-500">{{ getPorcentagemUso(cartao.usado, cartao.limiteTotal) |
+                            number:'1.0-0' }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500"
+                            [style.width.%]="getPorcentagemUso(cartao.usado, cartao.limiteTotal)"
+                            [style.background-color]="cartao.cor"></div>
+                    </div>
+                    <div class="mt-1 text-xs text-right text-green-600 font-medium">
+                        Disponível: {{ formatMoney(cartao.limiteTotal - cartao.usado) }}
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center py-3 border-t border-gray-100 text-sm">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-400 uppercase tracking-wider">Fechamento</span>
+                        <span class="font-medium text-gray-700">Dia {{ cartao.diaFechamento }}</span>
+                    </div>
+                    <div class="flex flex-col text-right">
+                        <span class="text-xs text-gray-400 uppercase tracking-wider">Vencimento</span>
+                        <span class="font-medium text-gray-700">Dia {{ cartao.diaVencimento }}</span>
+                    </div>
+                </div>
+
+                <div
+                    class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button (click)="editCartao(cartao)"
+                        class="p-2 text-gray-400 hover:text-primary hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Editar">
+                        <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
+                    </button>
+                    <button (click)="deleteCartao(cartao)"
+                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Excluir">
+                        <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button (click)="openNewCartaoModal()"
+            class="min-h-[240px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-primary hover:bg-purple-50/50 transition-all group text-gray-400 hover:text-primary">
+            <div
+                class="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-purple-100 flex items-center justify-center mb-3 transition-colors">
+                <lucide-icon [img]="icons.plus" class="w-6 h-6"></lucide-icon>
+            </div>
+            <span class="font-medium">Adicionar novo cartão</span>
+        </button>
+
+    </div>
+</div>
+
+<app-cartao-modal [isOpen]="isModalOpen" [cartaoToEdit]="editingCartao" (close)="closeModal()"></app-cartao-modal>

@@ -1,0 +1,47 @@
+<div *ngIf="isOpen" (click)="onClose()" class="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"></div>
+
+<aside
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen"
+    [class.translate-x-0]="isOpen" [class.-translate-x-full]="!isOpen">
+    <div class="h-full flex flex-col">
+
+        <div class="h-16 flex items-center justify-between px-6 border-b border-gray-100">
+            <span class="text-xl font-bold text-primary">CreditControl</span>
+            <button (click)="onClose()" class="lg:hidden text-gray-500 hover:text-gray-700">
+                <lucide-icon [img]="icons.close" class="w-6 h-6"></lucide-icon>
+            </button>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <a *ngFor="let item of menuItems" [routerLink]="item.path"
+                routerLinkActive="bg-purple-50 text-primary font-medium" (click)="onClose()"
+                class="flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors group">
+                <lucide-icon [img]="item.icon" class="w-5 h-5 group-hover:text-primary transition-colors"
+                    [class.text-primary]="rla.isActive"></lucide-icon>
+                <span #rla="routerLinkActive" routerLinkActive>{{ item.label }}</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-100 bg-gray-50/50" *ngIf="user$ | async as user">
+            <div class="flex items-center gap-3 mb-4">
+                <img *ngIf="user.photoURL" [src]="user.photoURL" class="w-10 h-10 rounded-full border border-gray-200"
+                    alt="Avatar">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">
+                        {{ user.displayName }}
+                    </p>
+                    <p class="text-xs text-gray-500 truncate">
+                        {{ user.email }}
+                    </p>
+                </div>
+            </div>
+
+            <button (click)="logout()"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all">
+                <lucide-icon [img]="icons.logout" class="w-4 h-4"></lucide-icon>
+                Sair
+            </button>
+        </div>
+
+    </div>
+</aside>

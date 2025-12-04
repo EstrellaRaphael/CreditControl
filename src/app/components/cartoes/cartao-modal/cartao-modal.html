@@ -1,0 +1,89 @@
+<div *ngIf="isOpen"
+    class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+            <h2 class="text-lg font-bold text-gray-900">
+                {{ cartaoToEdit ? 'Editar Cartão' : 'Novo Cartão' }}
+            </h2>
+            <button (click)="onClose()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <lucide-icon [img]="icons.close" class="w-5 h-5"></lucide-icon>
+            </button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-6 space-y-4">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Cartão</label>
+                <input type="text" formControlName="nome" placeholder="Ex: Nubank, XP Visa"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                    [class.border-red-300]="form.get('nome')?.invalid && form.get('nome')?.touched">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bandeira</label>
+                    <select formControlName="bandeira"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white">
+                        <option value="Mastercard">Mastercard</option>
+                        <option value="Visa">Visa</option>
+                        <option value="Elo">Elo</option>
+                        <option value="Amex">Amex</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Limite (R$)</label>
+                    <input type="number" formControlName="limiteTotal" placeholder="0,00"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Dia Fechamento</label>
+                    <select formControlName="diaFechamento"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                        <option *ngFor="let dia of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }}
+                        </option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Dia Vencimento</label>
+                    <select formControlName="diaVencimento"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                        <option *ngFor="let dia of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Cor de Identificação</label>
+                <div class="flex flex-wrap gap-3">
+                    <button type="button" *ngFor="let color of colorPresets" (click)="selectColor(color)"
+                        class="w-8 h-8 rounded-full transition-transform hover:scale-110 focus:outline-none flex items-center justify-center shadow-sm"
+                        [style.background-color]="color" [class.ring-2]="form.get('cor')?.value === color"
+                        [class.ring-offset-2]="form.get('cor')?.value === color"
+                        [class.ring-gray-400]="form.get('cor')?.value === color">
+                        <lucide-icon *ngIf="form.get('cor')?.value === color" [img]="icons.check"
+                            class="w-4 h-4 text-white"></lucide-icon>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+                <button type="button" (click)="onClose()"
+                    class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                    Cancelar
+                </button>
+                <button type="submit" [disabled]="form.invalid || isLoading"
+                    class="px-4 py-2 text-white bg-primary rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2">
+                    <span *ngIf="isLoading"
+                        class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    {{ cartaoToEdit ? 'Salvar Alterações' : 'Adicionar Cartão' }}
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>

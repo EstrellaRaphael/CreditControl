@@ -1,0 +1,148 @@
+<div class="space-y-6" *ngIf="dashboardData$ | async as data; else loading">
+
+    <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div class="flex items-center gap-2 text-gray-600">
+            <lucide-icon [img]="icons.calendar" class="w-5 h-5 text-primary"></lucide-icon>
+            <span class="font-medium">Dashboard</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button (click)="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <lucide-icon [img]="icons.prev" class="w-5 h-5 text-gray-600"></lucide-icon>
+            </button>
+
+            <span class="text-lg font-bold text-gray-900 capitalize w-32 text-center">
+                {{ getMonthName((dateControl$ | async)!.mes) }} / {{ (dateControl$ | async)!.ano }}
+            </span>
+
+            <button (click)="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <lucide-icon [img]="icons.next" class="w-5 h-5 text-gray-600"></lucide-icon>
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+            <div class="flex justify-between items-start z-10 relative">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">Total da Fatura (Mês)</p>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ formatMoney(getTotalFatura(data.parcelas)) }}</h3>
+                    <p class="text-xs text-gray-400 mt-2">{{ data.parcelas.length }} lançamentos neste mês</p>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg text-red-600">
+                    <lucide-icon [img]="icons.trending" class="w-6 h-6"></lucide-icon>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-red-50 rounded-full opacity-50 z-0"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+            <div class="flex justify-between items-start z-10 relative">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">Limite Disponível Global</p>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ formatMoney(getLimiteDisponivelGlobal(data.cartoes))
+                        }}</h3>
+                    <p class="text-xs text-gray-400 mt-2">De um total de {{
+                        formatMoney(getLimiteTotalGlobal(data.cartoes)) }}</p>
+                </div>
+                <div class="p-3 bg-green-50 rounded-lg text-green-600">
+                    <lucide-icon [img]="icons.wallet" class="w-6 h-6"></lucide-icon>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-green-50 rounded-full opacity-50 z-0"></div>
+        </div>
+
+    </div>
+
+    <div class="space-y-4">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Detalhamento por Cartão</h3>
+
+        <div class="space-y-4" *ngIf="data.cartoes.length > 0; else noCards">
+
+            <div *ngFor="let cartao of data.cartoes"
+                class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+
+                <div class="flex justify-between items-start mb-3">
+
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1.5 w-3 h-3 rounded-full shrink-0 shadow-sm"
+                            [style.background-color]="cartao.cor"></div>
+
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-base leading-tight">{{ cartao.nome }}</h4>
+                            <p class="text-sm text-gray-500 mt-0.5">
+                                Vence em {{ getVencimentoFormatado(cartao, (dateControl$ | async)!) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <p class="font-bold text-gray-900 text-base">{{ formatMoney(cartao.usado) }}</p>
+                        <p class="text-xs text-gray-500">de {{ formatMoney(cartao.limiteTotal) }}</p>
+                    </div>
+                </div>
+
+                <div class="w-full bg-gray-100 rounded-full h-2.5 mb-2 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500"
+                        [style.width.%]="(cartao.usado / cartao.limiteTotal) * 100"
+                        [style.background-color]="cartao.cor"></div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium text-gray-500">
+                        {{ ((cartao.usado / cartao.limiteTotal) * 100) | number:'1.1-1' }}% utilizado
+                    </span>
+
+                    <span class="text-xs font-medium text-green-600">
+                        Disp: {{ formatMoney(cartao.limiteTotal - cartao.usado) }}
+                    </span>
+                </div>
+
+            </div>
+        </div>
+
+        <ng-template #noCards>
+            <div class="p-8 text-center border border-dashed border-gray-300 rounded-xl bg-gray-50">
+                <p class="text-gray-500">Nenhum cartão cadastrado.</p>
+            </div>
+        </ng-template>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[400px] flex flex-col">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Distribuição (Por Cartão)</h3>
+
+            <div class="flex-1 w-full min-h-0">
+                <ngx-charts-pie-chart [results]="getCategoryData(data.parcelas, data.cartoes)" [scheme]="colorScheme"
+                    [doughnut]="true" [legend]="true" [legendPosition]="LegendPosition.Right" [legendTitle]="'Cartões'"
+                    [labels]="false" [animations]="false" [tooltipDisabled]="false" [arcWidth]="0.25">
+                </ngx-charts-pie-chart>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[400px] flex flex-col">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Histórico de Faturas</h3>
+
+            <div class="flex-1 w-full min-h-0" *ngIf="historicoData$ | async as historico">
+                <ngx-charts-bar-vertical [results]="historico" [scheme]="colorScheme" [gradient]="false" [xAxis]="true"
+                    [yAxis]="true" [legend]="false" [showXAxisLabel]="false" [showYAxisLabel]="false"
+                    [animations]="false" [tooltipDisabled]="false" [showDataLabel]="true" [barPadding]="20"
+                    [roundEdges]="true">
+                </ngx-charts-bar-vertical>
+            </div>
+
+            <div *ngIf="!(historicoData$ | async)" class="flex-1 flex items-center justify-center">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<ng-template #loading>
+    <div class="flex items-center justify-center h-64">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+</ng-template>
