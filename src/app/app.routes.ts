@@ -35,6 +35,10 @@ export const routes: Routes = [
             { path: 'compras', component: ComprasPageComponent },
 
             { path: 'categorias', loadComponent: () => import('./components/categorias/categorias-page/categorias-page').then(m => m.CategoriasPageComponent) },
+
+            { path: 'about', loadComponent: () => import('./components/about/about-page/about-page').then(m => m.AboutPageComponent) },
+
+            { path: 'help', loadComponent: () => import('./components/help/help-page/help-page').then(m => m.HelpPageComponent) },
         ]
     }
 ];
