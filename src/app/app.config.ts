@@ -1,9 +1,9 @@
-import 'zone.js'; // <--- IMPORTANTE: Essa linha corrige o erro NG0908
+import 'zone.js';
 import { ApplicationConfig, provideZoneChangeDetection, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideToastr } from 'ngx-toastr'; // <--- Importe isso
+import { provideToastr } from 'ngx-toastr';
 
 // Importações do Firebase
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
@@ -21,7 +21,7 @@ export const appConfig: ApplicationConfig = {
 
     provideToastr({
       timeOut: 3000,
-      positionClass: 'toast-bottom-right', // No celular fica melhor embaixo
+      positionClass: 'toast-bottom-right',
       preventDuplicates: true,
       progressBar: true,
     }),
@@ -29,10 +29,9 @@ export const appConfig: ApplicationConfig = {
     // Inicialização do Firebase
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()), provideServiceWorker('ngsw-worker.js', {
-      enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000'
-    }), provideServiceWorker('ngsw-worker.js', {
+    provideFirestore(() => getFirestore()),
+
+    provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'
     }),

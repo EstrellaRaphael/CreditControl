@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check } from 'lucide-angular';
 import { Observable, BehaviorSubject, switchMap, map } from 'rxjs';
-import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts'; 
+import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts';
 import { DashboardService } from '../../services/dashboard';
 import { Cartao, Parcela } from '../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
@@ -26,11 +26,15 @@ export class DashboardComponent implements OnInit {
 
   public LegendPosition = LegendPosition;
 
-  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check : Check };
+  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check: Check };
 
   // Dados reativos que vêm do Service (já combinados: cartoes + parcelas)
   dashboardData$ = this.dateControl$.pipe(
-    switchMap(date => this.dashboardService.getDashboardData(date.mes, date.ano))
+    switchMap(date => this.dashboardService.getDashboardData(date.mes, date.ano)),
+    map(data => ({
+      ...data,
+      chartData: this.getCategoryData(data.parcelas, data.cartoes)
+    }))
   );
   // NOVO: Dados exclusivos para o Histórico
   historicoData$ = this.dateControl$.pipe(
@@ -109,15 +113,15 @@ export class DashboardComponent implements OnInit {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   }
 
-  getVencimentoFormatado(cartao: Cartao, dataAtual: {mes: number, ano: number}): string {
+  getVencimentoFormatado(cartao: Cartao, dataAtual: { mes: number, ano: number }): string {
     // Formata o dia para ter 2 dígitos (05, 10...)
     const dia = cartao.diaVencimento.toString().padStart(2, '0');
     // Formata o mês para ter 2 dígitos
     const mes = dataAtual.mes.toString().padStart(2, '0');
-    
+
     return `${dia}/${mes}`;
   }
-  
+
   isFaturaPaga(parcelas: Parcela[]): boolean {
     if (parcelas.length === 0) return true;
     // Retorna true se NÃO existir nenhuma parcela com status PENDENTE
