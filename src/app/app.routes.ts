@@ -30,9 +30,11 @@ export const routes: Routes = [
         children: [
             { path: 'dashboard', component: DashboardComponent },
 
-            { path: 'cartoes', component: CartoesPage},
+            { path: 'cartoes', component: CartoesPage },
 
             { path: 'compras', component: ComprasPageComponent },
+
+            { path: 'categorias', loadComponent: () => import('./components/categorias/categorias-page/categorias-page').then(m => m.CategoriasPageComponent) },
         ]
     }
 ];

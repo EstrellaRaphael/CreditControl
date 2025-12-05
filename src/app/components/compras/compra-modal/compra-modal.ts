@@ -2,11 +2,12 @@ import { Component, EventEmitter, Input, Output, OnInit, inject, NgZone, OnChang
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { LucideAngularModule, X, Check, AlertTriangle } from 'lucide-angular';
-import { Cartao, Compra } from '../../../models/core.types';
+import { Cartao, Compra, Categoria } from '../../../models/core.types';
 import { Observable } from 'rxjs';
 import { CompraService } from '../../../services/compra';
 import { CartaoService } from '../../../services/cartao';
-import { ToastrService } from 'ngx-toastr'; // <--- Importe no topo
+import { CategoriaService } from '../../../services/categoria';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-compra-modal',
@@ -18,28 +19,26 @@ export class CompraModalComponent implements OnInit, OnChanges {
   private fb = inject(FormBuilder);
   private compraService = inject(CompraService);
   private cartaoService = inject(CartaoService);
+  private categoriaService = inject(CategoriaService);
   private ngZone = inject(NgZone);
-  private toastr = inject(ToastrService); // <--- Injete aqui
+  private toastr = inject(ToastrService);
 
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
 
   isLoading = false;
   readonly icons = { close: X, check: Check, alert: AlertTriangle };
-  
+
   // Lista de cartões para o Select
   cartoes$: Observable<Cartao[]> = this.cartaoService.getCartoes();
   cartoesList: Cartao[] = []; // Para busca local ao salvar
 
-  // Categorias fixas
-  readonly categorias = [
-    'Alimentação', 'Mercado', 'Lazer', 'Transporte', 
-    'Assinatura', 'Saúde', 'Educação', 'Casa', 'Outros'
-  ];
+  // Categorias dinâmicas
+  categorias$: Observable<Categoria[]> = this.categoriaService.getCategorias();
 
   form: FormGroup = this.fb.group({
     descricao: ['', [Validators.required, Validators.minLength(3)]],
-    valorTotal: ['', [Validators.required, Validators.min(0.01)]], // Usamos string vazia inicialmente
+    valorTotal: ['', [Validators.required, Validators.min(0.01)]],
     dataCompra: [new Date().toISOString().split('T')[0], Validators.required],
     cartaoId: ['', Validators.required],
     categoria: ['', Validators.required],
@@ -54,7 +53,7 @@ export class CompraModalComponent implements OnInit, OnChanges {
     // Monitora mudança no Tipo de Pagamento para validar Parcelas
     this.form.get('tipo')?.valueChanges.subscribe(tipo => {
       const parcelasCtrl = this.form.get('qtdParcelas');
-      
+
       if (tipo === 'parcelado') {
         parcelasCtrl?.setValidators([Validators.required, Validators.min(2), Validators.max(24)]);
         parcelasCtrl?.setValue(2); // Default para 2x
@@ -85,7 +84,7 @@ export class CompraModalComponent implements OnInit, OnChanges {
     this.close.emit();
   }
 
-async onSubmit() {
+  async onSubmit() {
     if (this.form.invalid) return;
 
     this.isLoading = true;
@@ -94,7 +93,7 @@ async onSubmit() {
     const cartaoSelecionado = this.cartoesList.find(c => c.id === formData.cartaoId);
 
     if (!cartaoSelecionado) {
-      this.toastr.warning('O cartão selecionado não foi encontrado.', 'Atenção'); // <--- Warning
+      this.toastr.warning('O cartão selecionado não foi encontrado.', 'Atenção');
       this.isLoading = false;
       return;
     }
@@ -111,7 +110,7 @@ async onSubmit() {
       }, cartaoSelecionado);
 
       // Sucesso!
-      this.toastr.success('Compra lançada com sucesso!', 'Feito!'); // <--- Success
+      this.toastr.success('Compra lançada com sucesso!', 'Feito!');
 
       this.ngZone.run(() => {
         this.isLoading = false;
@@ -120,10 +119,10 @@ async onSubmit() {
 
     } catch (error) {
       console.error('Erro ao salvar compra:', error);
-      
+
       this.ngZone.run(() => {
         this.isLoading = false;
-        this.toastr.error('Erro ao processar compra.', 'Ops!'); // <--- Error
+        this.toastr.error('Erro ao processar compra.', 'Ops!');
       });
     }
   }
