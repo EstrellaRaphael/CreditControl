@@ -1,10 +1,11 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft } from 'lucide-angular';
+import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check } from 'lucide-angular';
 import { Observable, BehaviorSubject, switchMap, map } from 'rxjs';
 import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts'; 
 import { DashboardService } from '../../services/dashboard';
 import { Cartao, Parcela } from '../../models/core.types';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +15,7 @@ import { Cartao, Parcela } from '../../models/core.types';
 })
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
+  private toastr = inject(ToastrService);
 
   // Controle de Data
   currentDate = new Date();
@@ -24,7 +26,7 @@ export class DashboardComponent implements OnInit {
 
   public LegendPosition = LegendPosition;
 
-  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight };
+  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check : Check };
 
   // Dados reativos que vêm do Service (já combinados: cartoes + parcelas)
   dashboardData$ = this.dateControl$.pipe(
@@ -114,6 +116,33 @@ export class DashboardComponent implements OnInit {
     const mes = dataAtual.mes.toString().padStart(2, '0');
     
     return `${dia}/${mes}`;
+  }
+  
+  isFaturaPaga(parcelas: Parcela[]): boolean {
+    if (parcelas.length === 0) return true;
+    // Retorna true se NÃO existir nenhuma parcela com status PENDENTE
+    return !parcelas.some(p => p.status === 'PENDENTE');
+  }
+
+  async pagarFatura() {
+    const current = this.dateControl$.value;
+    const mesNome = this.getMonthName(current.mes);
+
+    if (confirm(`Deseja confirmar o pagamento da fatura de ${mesNome}? Isso irá liberar o limite dos seus cartões.`)) {
+      try {
+        const qtdPagas = await this.dashboardService.pagarFaturaMensal(current.mes, current.ano);
+
+        if (qtdPagas > 0) {
+          this.toastr.success(`${qtdPagas} parcelas baixadas com sucesso!`, 'Fatura Paga');
+          this.toastr.info('Seu limite disponível foi atualizado.', 'Limite Liberado');
+        } else {
+          this.toastr.warning('Nenhuma parcela pendente encontrada.', 'Aviso');
+        }
+      } catch (error) {
+        console.error(error);
+        this.toastr.error('Erro ao processar pagamento.', 'Erro');
+      }
+    }
   }
 }
 

@@ -23,6 +23,7 @@ export interface Compra {
     cartaoId: string;
     cartaoNome?: string; // Para facilitar exibição na lista
     cartaoCor?: string;  // Para facilitar exibição na lista
+    parcelasPagas?: number;
 }
 
 export interface Parcela {

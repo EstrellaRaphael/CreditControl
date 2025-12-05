@@ -64,7 +64,8 @@ export class CompraService {
       userId: user.uid,
       // Denormalização para facilitar exibição (salvamos nome/cor do cartão na compra)
       cartaoNome: cartao.nome,
-      cartaoCor: cartao.cor
+      cartaoCor: cartao.cor,
+      parcelasPagas: 0
     };
 
     batch.set(compraRef, novaCompra);
@@ -100,26 +101,46 @@ export class CompraService {
     const compraRef = doc(this.firestore, `users/${user.uid}/compras/${compra.id}`);
     batch.delete(compraRef);
 
-    // 2. Buscar e Deletar as Parcelas (Filhas) - A CORREÇÃO PRINCIPAL
+    // 2. Buscar e Deletar as Parcelas (Filhas)
     const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
     const q = query(parcelasRef, where('compraId', '==', compra.id));
 
-    // Precisamos ler para saber quais deletar
     const parcelasSnapshot = await getDocs(q);
-
     parcelasSnapshot.forEach((docSnapshot) => {
       batch.delete(docSnapshot.ref);
     });
 
-    // 3. Estornar valor do cartão (Se cartão ainda existir)
+    // 3. Estornar valor do cartão (CORREÇÃO DO BUG)
     if (compra.cartaoId) {
       const cartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${compra.cartaoId}`);
       const cartaoSnap = await getDoc(cartaoRef);
 
       if (cartaoSnap.exists()) {
-        batch.update(cartaoRef, {
-          usado: increment(-compra.valorTotal)
-        });
+
+        // LÓGICA NOVA: Calcular quanto falta pagar para não estornar em dobro
+        let valorParaEstornar = compra.valorTotal;
+
+        // Se já tiver parcelas pagas, descontamos do valor a ser devolvido
+        if (compra.parcelasPagas && compra.parcelasPagas > 0) {
+          // Define o divisor correto (Recorrente consideramos 12 meses na geração, mas aqui o objeto pode ter salvo 1)
+          // Para parcelado normal, usa a qtdParcelas salva.
+          const totalParcelas = compra.tipo === 'recorrente' ? 12 : (compra.qtdParcelas || 1);
+
+          // Regra de 3: Quanto do valor total já foi pago?
+          const valorJaPago = (compra.valorTotal / totalParcelas) * compra.parcelasPagas;
+
+          valorParaEstornar = compra.valorTotal - valorJaPago;
+        }
+
+        // Garante que não vai dar número negativo por arredondamento
+        if (valorParaEstornar < 0) valorParaEstornar = 0;
+
+        // Se sobrar algo para estornar (valor > 0), atualiza o cartão
+        if (valorParaEstornar > 0) {
+          batch.update(cartaoRef, {
+            usado: increment(-valorParaEstornar)
+          });
+        }
       }
     }
 
