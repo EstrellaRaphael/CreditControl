@@ -1,59 +1,46 @@
-# CreditControl
+# 💳 CreditControl
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.2.
+![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=for-the-badge&logo=Firebase&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-## Development server
+**CreditControl** é um sistema financeiro inteligente focado na gestão de cartões de crédito. Desenvolvido com **Angular 19+** e **Firebase**, ele permite controlar gastos, visualizar o impacto de compras parceladas em meses futuros e gerenciar limites de múltiplos cartões.
 
-To start a local development server, run:
+O projeto é um **PWA (Progressive Web App)**, totalmente responsivo (Mobile First) e instalável em dispositivos móveis.
 
-```bash
-ng serve
-```
+---
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## 🚀 Funcionalidades
 
-## Code scaffolding
+- ✅ **Autenticação Segura**: Login social via Google (Firebase Auth).
+- ✅ **Multi-Tenant**: Dados isolados por usuário com Regras de Segurança estritas no Firestore.
+- ✅ **Gestão de Cartões**: Controle de limite, cores personalizadas e datas de fechamento/vencimento.
+- ✅ **Motor de Parcelas Inteligente**:
+  - Lógica de "Melhor Dia" de compra.
+  - Distribuição automática de parcelas nos meses futuros.
+  - Suporte a compras recorrentes (assinaturas).
+- ✅ **Dashboard Visual**:
+  - Gráficos interativos (Donut e Barras) com `ngx-charts`.
+  - KPIs de Fatura Atual e Limite Disponível Global.
+  - Navegação entre meses (passado e futuro).
+- ✅ **UX Aprimorada**: Notificações Toast, Loading States e Design System com Tailwind.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+---
 
-```bash
-ng generate component component-name
-```
+## 🛠️ Stack Tecnológica
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- **Frontend**: Angular 19 (Standalone Components)
+- **Estilização**: Tailwind CSS
+- **Backend & Database**: Firebase (Firestore)
+- **Autenticação**: Firebase Auth
+- **Gráficos**: ngx-charts
+- **Ícones**: Lucide Angular
+- **Notificações**: ngx-toastr
+- **Hospedagem**: Vercel
 
-```bash
-ng generate --help
-```
+---
 
-## Building
+## 🆓 Acesse Aqui!
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+[CreditControl](https://credit-control.vercel.app/)
