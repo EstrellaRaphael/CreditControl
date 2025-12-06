@@ -26,71 +26,143 @@
 
         <!-- Fatura Atual (Hero) -->
         <div
-            class="sm:col-span-2 lg:col-span-1 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-purple-800 text-white shadow-lg p-6">
+            class="sm:col-span-2 lg:col-span-1 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-purple-800 text-white shadow-lg p-5 flex flex-col justify-between h-full">
             <!-- Background Decor -->
             <div
                 class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3">
             </div>
 
-            <div class="relative z-10">
-                <p class="text-primary-100 font-medium text-sm flex items-center gap-2 mb-1">
-                    <lucide-icon [img]="icons.calendar" class="w-4 h-4"></lucide-icon>
-                    Fatura do Mês
-                </p>
-                <h2 class="text-3xl md:text-4xl font-bold tracking-tight">
+            <div class="relative z-10 w-full mb-2">
+                <div class="flex justify-between items-start">
+                    <p class="text-primary-100 font-medium text-sm">Fatura do Mês</p>
+                    <div class="p-2 bg-white/10 rounded-lg text-white backdrop-blur-sm">
+                        <lucide-icon [img]="icons.calendar" class="w-4 h-4"></lucide-icon>
+                    </div>
+                </div>
+
+                <h2 class="text-3xl font-bold tracking-tight mt-2">
                     {{ formatMoney(getTotalFatura(data.parcelas)) }}
                 </h2>
-                <div class="mt-4 flex items-center gap-2">
+            </div>
+
+            <div class="relative z-10 mt-auto">
+                <div class="flex items-center gap-2">
                     <span *ngIf="isFaturaPaga(data.parcelas)"
-                        class="px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-green-100 text-xs font-medium flex items-center gap-1.5">
+                        class="px-2.5 py-0.5 rounded-full bg-green-500/20 border border-green-400/30 text-green-100 text-xs font-medium flex items-center gap-1.5">
                         <lucide-icon [img]="icons.check" class="w-3 h-3"></lucide-icon> Paga
                     </span>
                     <span *ngIf="!isFaturaPaga(data.parcelas) && data.parcelas.length > 0"
                         class="text-primary-100 text-sm">
                         {{ data.parcelas.length }} lançamentos
                     </span>
+                    <span *ngIf="!isFaturaPaga(data.parcelas) && data.parcelas.length === 0"
+                        class="text-primary-100 text-sm">
+                        Sem lançamentos
+                    </span>
                 </div>
             </div>
         </div>
 
         <!-- Limite Disponível -->
-        <app-card class="p-5 flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-2">
-                <p class="text-gray-500 font-medium text-sm">Limite Disponível</p>
-                <div class="p-2 bg-green-50 rounded-lg text-green-600">
-                    <lucide-icon [img]="icons.wallet" class="w-4 h-4"></lucide-icon>
+        <app-card class="h-full">
+            <div class="p-5 h-full flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-gray-500 font-medium text-sm">Limite Disponível</p>
+                    <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                        <lucide-icon [img]="icons.wallet" class="w-4 h-4"></lucide-icon>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mt-2">{{
+                    formatMoney(getLimiteDisponivelGlobal(data.cartoes)) }}
+                </h3>
+                <div class="mt-auto pt-3">
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-1.5">
+                        <div class="h-full bg-green-500 rounded-full transition-all"
+                            [style.width.%]="(getLimiteDisponivelGlobal(data.cartoes) / getLimiteTotalGlobal(data.cartoes)) * 100">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400">de {{ formatMoney(getLimiteTotalGlobal(data.cartoes)) }}</p>
                 </div>
             </div>
-            <h3 class="text-2xl font-bold text-gray-900">{{ formatMoney(getLimiteDisponivelGlobal(data.cartoes)) }}</h3>
-            <div class="mt-3 w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div class="h-full bg-green-500 rounded-full transition-all"
-                    [style.width.%]="(getLimiteDisponivelGlobal(data.cartoes) / getLimiteTotalGlobal(data.cartoes)) * 100">
-                </div>
-            </div>
-            <p class="text-xs text-gray-400 mt-1.5">de {{ formatMoney(getLimiteTotalGlobal(data.cartoes)) }}</p>
         </app-card>
 
         <!-- Total de Cartões -->
-        <app-card class="p-5 flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-2">
-                <p class="text-gray-500 font-medium text-sm">Cartões Ativos</p>
-                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
-                    <lucide-icon [img]="icons.creditCard" class="w-4 h-4"></lucide-icon>
+        <app-card class="h-full">
+            <div class="p-5 h-full flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-gray-500 font-medium text-sm">Cartões Ativos</p>
+                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <lucide-icon [img]="icons.creditCard" class="w-4 h-4"></lucide-icon>
+                    </div>
                 </div>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-900">{{ data.cartoes.length }}</h3>
-            <div class="flex -space-x-2 mt-3">
-                <div *ngFor="let cartao of data.cartoes.slice(0,4)"
-                    class="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shadow-sm"
-                    [style.background-color]="cartao.cor">
-                    {{ cartao.nome.charAt(0) }}
-                </div>
-                <div *ngIf="data.cartoes.length > 4"
-                    class="w-7 h-7 rounded-full border-2 border-white bg-gray-700 flex items-center justify-center text-xs font-bold text-white shadow-sm">
-                    +{{ data.cartoes.length - 4 }}
+                <h3 class="text-2xl font-bold text-gray-900 mt-2">{{ data.cartoes.length }}</h3>
+                <div class="mt-auto pt-3 flex -space-x-2">
+                    <div *ngFor="let cartao of data.cartoes.slice(0,4)"
+                        class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                        [style.background-color]="cartao.cor">
+                        {{ cartao.nome.charAt(0) }}
+                    </div>
+                    <div *ngIf="data.cartoes.length > 4"
+                        class="w-8 h-8 rounded-full border-2 border-white bg-gray-700 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                        +{{ data.cartoes.length - 4 }}
+                    </div>
                 </div>
             </div>
         </app-card>
+    </div>
+    <!-- New Stats Row: Highlights of the Month -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4"
+        *ngIf="data.stats.topSpender || data.stats.favoriteCard || data.stats.biggestPurchase">
+
+        <!-- Top Spender -->
+        <app-card class="p-4" *ngIf="data.stats.topSpender as stat">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <img *ngIf="stat.photo" [src]="stat.photo" class="w-full h-full rounded-full object-cover">
+                    <lucide-icon *ngIf="!stat.photo" [img]="icons.user" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{
+                        stat.label }}</p>
+                    <p class="font-bold text-gray-900">{{ stat.name }}</p>
+                    <p class="text-sm text-indigo-600 font-semibold">{{ formatMoney(stat.value) }}
+                    </p>
+                </div>
+            </div>
+        </app-card>
+
+        <!-- Favorite Card -->
+        <app-card class="p-4" *ngIf="data.stats.favoriteCard as stat">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-sm"
+                    [style.background-color]="stat.color">
+                    <lucide-icon [img]="icons.creditCard" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{
+                        stat.label }}</p>
+                    <p class="font-bold text-gray-900">{{ stat.name }}</p>
+                    <p class="text-sm text-gray-600">{{ stat.count }} compras</p>
+                </div>
+            </div>
+        </app-card>
+
+        <!-- Biggest Purchase -->
+        <app-card class="p-4" *ngIf="data.stats.biggestPurchase as stat">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                    <lucide-icon [img]="icons.bag" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{
+                        stat.label }}</p>
+                    <p class="font-bold text-gray-900 truncate max-w-[150px]" title="{{stat.name}}">
+                        {{ stat.name }}</p>
+                    <p class="text-sm text-pink-600 font-semibold">{{ formatMoney(stat.value) }}</p>
+                </div>
+            </div>
+        </app-card>
+
     </div>
 
     <!-- Pay Invoice Button (Full Width on Mobile when applicable) -->
@@ -156,7 +228,8 @@
                             </span>
                             <span class="font-medium text-gray-700 text-sm">{{ cat.name }}</span>
                         </div>
-                        <span class="font-bold text-gray-900 text-sm">{{ formatMoney(cat.value) }}</span>
+                        <span class="font-bold text-gray-900 text-sm">{{ formatMoney(cat.value)
+                            }}</span>
                     </div>
                 </div>
                 <ng-template #noCategorias>
@@ -176,7 +249,8 @@
                         <div class="flex items-center gap-2 min-w-0">
                             <div class="w-2 h-2 rounded-full flex-shrink-0 bg-primary">
                             </div>
-                            <span class="text-sm text-gray-700 truncate">{{ parcela.compraDescricao }}</span>
+                            <span class="text-sm text-gray-700 truncate">{{ parcela.compraDescricao
+                                }}</span>
                         </div>
                         <span class="font-semibold text-gray-900 text-sm flex-shrink-0 ml-2">{{
                             formatMoney(parcela.valor)
@@ -197,7 +271,9 @@
     </div>
 
     <ng-template #noCards>
-        <app-welcome-banner (action)="navigateToCartoes()"></app-welcome-banner>
+        <div class="mt-8">
+            <app-welcome-banner (action)="navigateToCartoes()"></app-welcome-banner>
+        </div>
     </ng-template>
 
 </div>

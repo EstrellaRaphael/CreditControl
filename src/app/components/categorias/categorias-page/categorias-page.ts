@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angula
 import { LucideAngularModule, Trash2, Plus, Tag, Edit, X } from 'lucide-angular';
 import { CategoriaService } from '../../../services/categoria';
 import { CompraService } from '../../../services/compra';
+import { HouseholdService } from '../../../services/household.service';
 import { Observable } from 'rxjs';
 import { Categoria } from '../../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
@@ -24,6 +25,7 @@ export class CategoriasPageComponent {
     private fb = inject(FormBuilder);
     private categoriaService = inject(CategoriaService);
     private compraService = inject(CompraService);
+    private householdService = inject(HouseholdService);
     private toastr = inject(ToastrService);
     private cdr = inject(ChangeDetectorRef);
 
@@ -58,6 +60,10 @@ export class CategoriasPageComponent {
     }
 
     editCategoria(cat: Categoria) {
+        if (!this.householdService.hasPermission('manageCategories')) {
+            this.toastr.warning('Você não tem permissão para editar categorias', 'Acesso negado');
+            return;
+        }
         this.editingCategoria = cat;
         this.form.patchValue({ nome: cat.nome, cor: cat.cor });
     }
@@ -70,6 +76,12 @@ export class CategoriasPageComponent {
     async onSubmit() {
         if (this.form.invalid) return;
 
+        // Check permission before submit
+        if (!this.householdService.hasPermission('manageCategories')) {
+            this.toastr.warning('Você não tem permissão para gerenciar categorias', 'Acesso negado');
+            return;
+        }
+
         const data = this.form.value;
         try {
             if (this.editingCategoria?.id) {
@@ -80,9 +92,11 @@ export class CategoriasPageComponent {
                 this.toastr.success('Categoria criada.', 'Feito');
             }
             this.cancelEdit();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            this.toastr.error('Erro ao salvar categoria.', 'Erro');
+            // Show specific error message if available
+            const message = error?.message || 'Erro ao salvar categoria.';
+            this.toastr.error(message, 'Erro');
         }
     }
 

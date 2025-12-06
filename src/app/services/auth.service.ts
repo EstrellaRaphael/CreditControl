@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Injector } from '@angular/core';
 import { Auth, GoogleAuthProvider, signInWithPopup, signOut, user, User } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -11,6 +11,7 @@ export class AuthService {
     private auth = inject(Auth);
     private router = inject(Router);
     private firestore = inject(Firestore);
+    private injector = inject(Injector);
 
     // user$ é um Observable. Ele emite o objeto User quando logado, ou null quando deslogado.
     user$: Observable<User | null> = user(this.auth);
@@ -34,10 +35,15 @@ export class AuthService {
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
-                    tutorialCompleted: true, // Marcamos como true pois o tutorial está no login
+                    tutorialCompleted: true,
                     createdAt: new Date().toISOString()
                 });
             }
+
+            // Inicializa o HouseholdService após o login (usando Injector para evitar dependência circular)
+            const { HouseholdService } = await import('./household.service');
+            const householdService = this.injector.get(HouseholdService);
+            await householdService.initialize();
 
             // Sempre redireciona para o Dashboard
             this.router.navigate(['/dashboard']);

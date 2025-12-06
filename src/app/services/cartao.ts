@@ -1,15 +1,16 @@
 import { Injectable, inject } from '@angular/core';
-import { 
-  Firestore, 
-  collection, 
-  addDoc, 
-  doc, 
-  deleteDoc, 
+import {
+  Firestore,
+  collection,
+  addDoc,
+  doc,
+  deleteDoc,
   updateDoc,
-  onSnapshot // <--- Novo import
+  onSnapshot
 } from '@angular/fire/firestore';
-import { AuthService } from './auth.service';
-import { Observable, switchMap, of } from 'rxjs';
+import { HouseholdService } from './household.service';
+import { Auth } from '@angular/fire/auth';
+import { Observable, of } from 'rxjs';
 import { Cartao } from '../models/core.types';
 
 @Injectable({
@@ -17,67 +18,88 @@ import { Cartao } from '../models/core.types';
 })
 export class CartaoService {
   private firestore = inject(Firestore);
-  private authService = inject(AuthService);
+  private householdService = inject(HouseholdService);
+  private auth = inject(Auth);
 
-  // Recupera todos os cartões (Versão Manual com onSnapshot)
+  /**
+   * Recupera todos os cartões do Household atual (tempo real).
+   */
   getCartoes(): Observable<Cartao[]> {
-    return this.authService.user$.pipe(
-      switchMap(user => {
-        if (!user) return of([]);
-        
-        // Retornamos um Observable manual para ter controle total
+    return this.householdService.householdId$.pipe(
+      switchMap(householdId => {
+        if (!householdId) return of([]);
+
         return new Observable<Cartao[]>(observer => {
-          const cartoesCollection = collection(this.firestore, `users/${user.uid}/cartoes`);
-          
-          // onSnapshot é a função nativa do Firebase que ouve em tempo real
+          const cartoesCollection = collection(this.firestore, `households/${householdId}/cartoes`);
+
           const unsubscribe = onSnapshot(cartoesCollection, (snapshot) => {
-            // Mapeamos os documentos manualmente
             const cartoes = snapshot.docs.map(doc => {
               const data = doc.data() as Cartao;
-              const id = doc.id;
-              return { id, ...data };
+              return { id: doc.id, ...data };
             });
-            
-            // Emite os dados novos para o Angular
             observer.next(cartoes);
-          }, (error) => {
-            observer.error(error);
-          });
+          }, (error) => observer.error(error));
 
-          // Função de limpeza (quando sair da tela)
           return () => unsubscribe();
         });
       })
     );
   }
 
+  /**
+   * Adiciona um novo cartão ao Household atual.
+   */
   async addCartao(cartao: Omit<Cartao, 'id' | 'userId' | 'usado'>) {
-    const user = this.authService.getCurrentUser();
-    if (!user) throw new Error('Usuário não autenticado');
+    const householdId = this.householdService.getHouseholdId();
+    if (!householdId) throw new Error('Household não encontrado');
 
-    const novoCartao: any = { // Usei 'any' temporário para evitar conflito de tipagem estrita no salvamento
+    if (!this.householdService.hasPermission('manageCards')) {
+      throw new Error('Você não tem permissão para adicionar cartões');
+    }
+
+    const user = this.auth.currentUser;
+    const novoCartao: any = {
       ...cartao,
-      userId: user.uid,
-      usado: 0
+      userId: '',
+      usado: 0,
+      createdBy: user?.uid || '',
+      createdByName: user?.displayName || user?.email || 'Desconhecido'
     };
 
-    const cartoesCollection = collection(this.firestore, `users/${user.uid}/cartoes`);
+    const cartoesCollection = collection(this.firestore, `households/${householdId}/cartoes`);
     return addDoc(cartoesCollection, novoCartao);
   }
 
+  /**
+   * Atualiza um cartão existente.
+   */
   async updateCartao(cartaoId: string, dados: Partial<Cartao>) {
-    const user = this.authService.getCurrentUser();
-    if (!user) throw new Error('Usuário não autenticado');
+    const householdId = this.householdService.getHouseholdId();
+    if (!householdId) throw new Error('Household não encontrado');
 
-    const docRef = doc(this.firestore, `users/${user.uid}/cartoes/${cartaoId}`);
+    if (!this.householdService.hasPermission('manageCards')) {
+      throw new Error('Você não tem permissão para editar cartões');
+    }
+
+    const docRef = doc(this.firestore, `households/${householdId}/cartoes/${cartaoId}`);
     return updateDoc(docRef, dados);
   }
 
+  /**
+   * Exclui um cartão.
+   */
   async deleteCartao(cartaoId: string) {
-    const user = this.authService.getCurrentUser();
-    if (!user) throw new Error('Usuário não autenticado');
+    const householdId = this.householdService.getHouseholdId();
+    if (!householdId) throw new Error('Household não encontrado');
 
-    const docRef = doc(this.firestore, `users/${user.uid}/cartoes/${cartaoId}`);
+    if (!this.householdService.hasPermission('manageCards')) {
+      throw new Error('Você não tem permissão para excluir cartões');
+    }
+
+    const docRef = doc(this.firestore, `households/${householdId}/cartoes/${cartaoId}`);
     return deleteDoc(docRef);
   }
 }
+
+// Import helper
+import { switchMap } from 'rxjs';

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-import { LucideAngularModule, LayoutDashboard, CreditCard, ShoppingBag, LogOut, X, Tag, Info, HelpCircle, Calendar } from 'lucide-angular';
+import { LucideAngularModule, LayoutDashboard, CreditCard, ShoppingBag, LogOut, X, Tag, Info, HelpCircle, Calendar, Settings } from 'lucide-angular';
 
 @Component({
   selector: 'app-sidebar',
@@ -30,7 +30,8 @@ export class SidebarComponent {
     tags: Tag,
     info: Info,
     help: HelpCircle,
-    calendar: Calendar
+    calendar: Calendar,
+    settings: Settings
   };
 
   // Itens do menu
@@ -40,6 +41,7 @@ export class SidebarComponent {
     { label: 'Compras', path: '/compras', icon: this.icons.shopping },
     { label: 'Parcelas', path: '/parcelas', icon: this.icons.calendar },
     { label: 'Categorias', path: '/categorias', icon: this.icons.tags },
+    { label: 'Configurações', path: '/settings', icon: this.icons.settings },
     { label: 'Sobre', path: '/about', icon: this.icons.info },
     { label: 'Ajuda', path: '/help', icon: this.icons.help },
   ];

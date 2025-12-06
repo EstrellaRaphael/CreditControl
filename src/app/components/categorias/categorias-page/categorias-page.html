@@ -86,30 +86,36 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <app-card *ngFor="let cat of categorias"
-                        class="group relative p-5 hover:border-primary/30 hover:shadow-md transition-all duration-300">
+                        class="group relative p-4 hover:border-primary/30 hover:shadow-md transition-all duration-300">
 
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                        <div class="flex items-center justify-between gap-3">
+                            <!-- Left: Icon + Text -->
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                                     [style.backgroundColor]="cat.cor + '20'">
-                                    <div class="w-4 h-4 rounded-full" [style.backgroundColor]="cat.cor"></div>
+                                    <div class="w-3.5 h-3.5 rounded-full" [style.backgroundColor]="cat.cor"></div>
                                 </div>
-                                <div>
-                                    <h3 class="font-bold text-gray-900 text-lg">{{ cat.nome }}</h3>
-                                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Personalizado
+                                <div class="min-w-0">
+                                    <h3 class="font-semibold text-gray-900 truncate">{{ cat.nome }}</h3>
+                                    <p *ngIf="cat.createdByName" class="text-[10px] text-gray-400 truncate">
+                                        por {{ cat.createdByName }}
                                     </p>
                                 </div>
                             </div>
 
+                            <!-- Right: Actions -->
                             <div
-                                class="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                                <app-button (action)="editCategoria(cat)" variant="ghost" size="sm" [icon]="icons.edit"
+                                class="flex gap-1 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                <button (click)="editCategoria(cat)"
+                                    class="p-1.5 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 transition-colors"
                                     title="Editar categoria">
-                                </app-button>
-                                <app-button (action)="deleteCategoria(cat)" variant="ghost" size="sm"
-                                    [icon]="icons.trash" class="text-red-500 hover:text-red-500"
+                                    <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
+                                </button>
+                                <button (click)="deleteCategoria(cat)"
+                                    class="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                                     title="Excluir categoria">
-                                </app-button>
+                                    <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
+                                </button>
                             </div>
                         </div>
                     </app-card>

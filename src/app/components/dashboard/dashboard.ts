@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check, CreditCard } from 'lucide-angular';
+import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check, CreditCard, User, Trophy, ShoppingBag } from 'lucide-angular';
 import { Observable, BehaviorSubject, switchMap, map } from 'rxjs';
 import { Router } from '@angular/router';
 import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts';
@@ -11,7 +11,7 @@ import { WelcomeBannerComponent } from '../shared/welcome-banner/welcome-banner.
 import { CardComponent } from '../ui/card/card.component';
 import { ButtonComponent } from '../ui/button/button.component';
 import { DashboardService } from '../../services/dashboard';
-import { Cartao, Parcela } from '../../models/core.types';
+import { Cartao, Parcela, HouseholdMember, Compra } from '../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -48,14 +48,19 @@ export class DashboardComponent implements OnInit {
 
   public LegendPosition = LegendPosition;
 
-  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check: Check, creditCard: CreditCard };
+  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check: Check, creditCard: CreditCard, user: User, trophy: Trophy, bag: ShoppingBag };
 
   // Dados reativos que vêm do Service (já combinados: cartoes + parcelas)
   dashboardData$ = this.dateControl$.pipe(
     switchMap(date => this.dashboardService.getDashboardData(date.mes, date.ano)),
     map(data => ({
       ...data,
-      chartData: this.getCategoryData(data.parcelas, data.cartoes)
+      chartData: this.getCategoryData(data.parcelas, data.cartoes),
+      stats: {
+        topSpender: this.getTopSpender(data.compras, data.members),
+        favoriteCard: this.getFavoriteCard(data.compras, data.cartoes),
+        biggestPurchase: this.getBiggestPurchase(data.compras)
+      }
     }))
   );
 
@@ -137,6 +142,60 @@ export class DashboardComponent implements OnInit {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
+  }
+
+  // --- Statistics Helpers ---
+
+  getTopSpender(compras: Compra[], members: HouseholdMember[]) {
+    if (!compras.length || !members.length) return null;
+
+    const spendByMember = compras.reduce((acc, compra) => {
+      const uid = compra.createdBy || 'unknown';
+      acc[uid] = (acc[uid] || 0) + compra.valorTotal; // Ranking by Value
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topUid = Object.keys(spendByMember).reduce((a, b) => spendByMember[a] > spendByMember[b] ? a : b);
+    const member = members.find(m => m.id === topUid);
+
+    return {
+      name: member?.displayName || 'Desconhecido',
+      photo: member?.photoURL,
+      value: spendByMember[topUid],
+      label: 'Maior Comprador'
+    };
+  }
+
+  getFavoriteCard(compras: Compra[], cartoes: Cartao[]) {
+    if (!compras.length) return null;
+
+    const usageByCard = compras.reduce((acc, compra) => {
+      const cardId = compra.cartaoId;
+      acc[cardId] = (acc[cardId] || 0) + 1; // Ranking by Frequency
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topCardId = Object.keys(usageByCard).reduce((a, b) => usageByCard[a] > usageByCard[b] ? a : b);
+    const card = cartoes.find(c => c.id === topCardId);
+
+    return {
+      name: card?.nome || 'Cartão Excluído',
+      color: card?.cor || '#374151',
+      count: usageByCard[topCardId],
+      label: 'Cartão Favorito'
+    };
+  }
+
+  getBiggestPurchase(compras: Compra[]) {
+    if (!compras.length) return null;
+
+    const biggest = compras.reduce((prev, current) => (prev.valorTotal > current.valorTotal) ? prev : current);
+
+    return {
+      name: biggest.descricao,
+      value: biggest.valorTotal,
+      label: 'Maior Compra'
+    };
   }
 
   // Helper para nome do mês

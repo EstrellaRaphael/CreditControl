@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { Cartao } from '../../../models/core.types';
 import { CartaoModalComponent } from '../cartao-modal/cartao-modal';
 import { CartaoService } from '../../../services/cartao';
+import { HouseholdService } from '../../../services/household.service';
 import { ToastrService } from 'ngx-toastr';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
@@ -20,6 +21,7 @@ import { ButtonComponent } from '../../ui/button/button.component';
 })
 export class CartoesPage implements OnInit {
   private cartaoService: CartaoService = inject(CartaoService);
+  private householdService = inject(HouseholdService);
   private toastr = inject(ToastrService);
 
   private route = inject(ActivatedRoute);
@@ -29,7 +31,6 @@ export class CartoesPage implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['action'] === 'new') {
-        // Pequeno delay para garantir que o modal abra suavemente após a navegação
         setTimeout(() => this.openNewCartaoModal(), 100);
       }
     });
@@ -60,14 +61,22 @@ export class CartoesPage implements OnInit {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   }
 
-  // 3. Funções para abrir/fechar
+  // Funções para abrir/fechar
   openNewCartaoModal() {
-    this.editingCartao = null; // Garante que não é edição
+    if (!this.householdService.hasPermission('manageCards')) {
+      this.toastr.warning('Você não tem permissão para adicionar cartões', 'Acesso negado');
+      return;
+    }
+    this.editingCartao = null;
     this.isModalOpen = true;
   }
 
   editCartao(cartao: Cartao) {
-    this.editingCartao = cartao; // Passa os dados para o modal
+    if (!this.householdService.hasPermission('manageCards')) {
+      this.toastr.warning('Você não tem permissão para editar cartões', 'Acesso negado');
+      return;
+    }
+    this.editingCartao = cartao;
     this.isModalOpen = true;
   }
 

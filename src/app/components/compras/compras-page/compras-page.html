@@ -101,6 +101,10 @@
                         <app-badge *ngIf="compra.tipo === 'recorrente'" variant="info">
                             Assinatura
                         </app-badge>
+
+                        <span *ngIf="compra.createdByName" class="text-[10px] text-gray-400">
+                            • {{ compra.createdByName }}
+                        </span>
                     </div>
                 </div>
 

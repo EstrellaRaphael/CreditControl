@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, query, where, onSnapshot, writeBatch, doc, increment, getDocs } from '@angular/fire/firestore';
-import { AuthService } from './auth.service';
-import { Observable, switchMap, of, combineLatest, map, forkJoin, take } from 'rxjs';
-import { Parcela } from '../models/core.types';
+import { HouseholdService } from './household.service';
+import { CompraService } from './compra';
+import { Observable, switchMap, of, combineLatest, map } from 'rxjs';
+import { Parcela, Compra } from '../models/core.types';
 import { CartaoService } from './cartao';
 
 @Injectable({
@@ -10,20 +11,20 @@ import { CartaoService } from './cartao';
 })
 export class DashboardService {
   private firestore = inject(Firestore);
-  private authService = inject(AuthService);
+  private householdService = inject(HouseholdService);
   private cartaoService = inject(CartaoService);
+  private compraService = inject(CompraService);
 
-  // Busca as parcelas de um mês/ano específico em tempo real
+  /**
+   * Busca as parcelas de um mês/ano específico em tempo real.
+   */
   getParcelasDoMes(mes: number, ano: number): Observable<Parcela[]> {
-    return this.authService.user$.pipe(
-      switchMap(user => {
-        if (!user) return of([]);
+    return this.householdService.householdId$.pipe(
+      switchMap(householdId => {
+        if (!householdId) return of([]);
 
         return new Observable<Parcela[]>(observer => {
-          const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
-
-          // Query composta: Filtra por Mês E Ano
-          // Nota: Isso exige um índice composto no Firebase (que você já criou)
+          const parcelasRef = collection(this.firestore, `households/${householdId}/parcelas`);
           const q = query(
             parcelasRef,
             where('mesReferencia', '==', mes),
@@ -35,49 +36,49 @@ export class DashboardService {
               id: doc.id,
               ...doc.data()
             } as Parcela));
-
             observer.next(parcelas);
           }, (error) => {
             console.error("Erro ao buscar parcelas:", error);
             observer.error(error);
           });
 
-          // Função de limpeza quando o componente for destruído ou o mês mudar
           return () => unsubscribe();
         });
       })
     );
   }
 
-  // Busca dados completos para o Dashboard (Cartões + Parcelas do Mês)
-  // Usa combineLatest para esperar os dois dados chegarem antes de mostrar na tela
+  /**
+   * Busca dados completos para o Dashboard (Cartões + Parcelas do Mês).
+   */
   getDashboardData(mes: number, ano: number) {
+    const start = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+    const lastDay = new Date(ano, mes, 0).getDate();
+    const end = `${ano}-${mes.toString().padStart(2, '0')}-${lastDay}`;
+
     return combineLatest([
-      this.cartaoService.getCartoes(),      // Traz todos os cartões (para calcular limite global)
-      this.getParcelasDoMes(mes, ano)       // Traz as parcelas filtradas do mês
+      this.cartaoService.getCartoes(),
+      this.getParcelasDoMes(mes, ano),
+      this.householdService.getMembers(),
+      this.compraService.getCompras(start, end)
     ]).pipe(
-      map(([cartoes, parcelas]) => {
-        return {
-          cartoes,
-          parcelas
-        };
-      })
+      map(([cartoes, parcelas, members, compras]) => ({ cartoes, parcelas, members, compras }))
     );
   }
 
+  /**
+   * Busca histórico dos últimos 6 meses.
+   */
   getHistorico(mesAtual: number, anoAtual: number): Observable<{ name: string, value: number }[]> {
-    return this.authService.user$.pipe(
-      switchMap(user => {
-        if (!user) return of([]);
+    return this.householdService.householdId$.pipe(
+      switchMap(householdId => {
+        if (!householdId) return of([]);
 
-        // OTIMIZAÇÃO: Busca um range de datas de uma vez só
-        // Define o intervalo (Últimos 6 meses)
         const hoje = new Date();
-        const dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Fim deste mês
-        const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1); // 5 meses atrás
+        const dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+        const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
 
-        const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
-        // Note: Precisamos de um índice composto: userId + dataVencimento
+        const parcelasRef = collection(this.firestore, `households/${householdId}/parcelas`);
         const q = query(
           parcelasRef,
           where('dataVencimento', '>=', dataInicio.toISOString().split('T')[0]),
@@ -86,17 +87,15 @@ export class DashboardService {
 
         return new Observable<{ name: string, value: number }[]>(observer => {
           getDocs(q).then(snapshot => {
-            // Agregação em Memória
             const mapStats = new Map<string, number>();
 
-            // Inicializa os 6 meses com 0 para garantir que apareçam no gráfico
+            // Inicializa os 6 meses com 0
             for (let i = 5; i >= 0; i--) {
               let m = mesAtual - i;
               let a = anoAtual;
               if (m <= 0) { m += 12; a -= 1; }
               if (m > 12) { m -= 12; a += 1; }
-              const key = `${m}/${a}`;
-              mapStats.set(key, 0);
+              mapStats.set(`${m}/${a}`, 0);
             }
 
             snapshot.forEach(doc => {
@@ -107,7 +106,6 @@ export class DashboardService {
               }
             });
 
-            // Formata para o gráfico
             const result = Array.from(mapStats.entries()).map(([key, valor]) => {
               const [m, a] = key.split('/').map(Number);
               return {
@@ -124,20 +122,25 @@ export class DashboardService {
     );
   }
 
-  // Helper simples para nome curto (Jan, Fev...)
   private getNomeMesAbreviado(mes: number): string {
     const data = new Date(2024, mes - 1, 1);
     return data.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
   }
 
+  /**
+   * Paga todas as parcelas pendentes de um mês.
+   */
   async pagarFaturaMensal(mes: number, ano: number) {
-    const user = this.authService.getCurrentUser();
-    if (!user) throw new Error('Usuário não logado');
+    const householdId = this.householdService.getHouseholdId();
+    if (!householdId) throw new Error('Household não encontrado');
+
+    if (!this.householdService.hasPermission('payInvoices')) {
+      throw new Error('Você não tem permissão para pagar faturas');
+    }
 
     const batch = writeBatch(this.firestore);
-    const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
+    const parcelasRef = collection(this.firestore, `households/${householdId}/parcelas`);
 
-    // Busca apenas as parcelas deste mês que ainda estão PENDENTES
     const q = query(
       parcelasRef,
       where('mesReferencia', '==', mes),
@@ -146,62 +149,56 @@ export class DashboardService {
     );
 
     const snapshot = await getDocs(q);
-
     if (snapshot.empty) return 0;
 
     snapshot.forEach((documento) => {
       const dados = documento.data() as Parcela;
 
-      // 1. Marca a parcela como PAGO (Igual antes)
+      // Marca como PAGO
       batch.update(documento.ref, { status: 'PAGO' });
 
-      // 2. Restaura o limite do cartão (Igual antes)
-      const cartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${dados.cartaoId}`);
-      batch.update(cartaoRef, {
-        usado: increment(-dados.valor)
-      });
+      // Restaura limite do cartão
+      const cartaoRef = doc(this.firestore, `households/${householdId}/cartoes/${dados.cartaoId}`);
+      batch.update(cartaoRef, { usado: increment(-dados.valor) });
 
-      // 3. NOVO: Incrementa o contador na Compra Pai
+      // Incrementa contador na Compra Pai
       if (dados.compraId) {
-        const compraRef = doc(this.firestore, `users/${user.uid}/compras/${dados.compraId}`);
-        batch.update(compraRef, {
-          parcelasPagas: increment(1)
-        });
+        const compraRef = doc(this.firestore, `households/${householdId}/compras/${dados.compraId}`);
+        batch.update(compraRef, { parcelasPagas: increment(1) });
       }
     });
 
     await batch.commit();
-    return snapshot.size; // Retorna quantas parcelas foram pagas
+    return snapshot.size;
   }
 
-  // NOVO: Pagar uma parcela individual
+  /**
+   * Paga uma parcela individual.
+   */
   async pagarParcelaIndividual(parcela: Parcela) {
-    const user = this.authService.getCurrentUser();
-    if (!user || !parcela.id) throw new Error('Dados inválidos');
+    const householdId = this.householdService.getHouseholdId();
+    if (!householdId || !parcela.id) throw new Error('Dados inválidos');
+
+    if (!this.householdService.hasPermission('payInvoices')) {
+      throw new Error('Você não tem permissão para pagar parcelas');
+    }
 
     const batch = writeBatch(this.firestore);
 
-    // 1. Marca a parcela como PAGO
-    const parcelaRef = doc(this.firestore, `users/${user.uid}/parcelas/${parcela.id}`);
+    // Marca como PAGO
+    const parcelaRef = doc(this.firestore, `households/${householdId}/parcelas/${parcela.id}`);
     batch.update(parcelaRef, { status: 'PAGO' });
 
-    // 2. Restaura o limite do cartão
-    const cartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${parcela.cartaoId}`);
-    batch.update(cartaoRef, {
-      usado: increment(-parcela.valor)
-    });
+    // Restaura limite do cartão
+    const cartaoRef = doc(this.firestore, `households/${householdId}/cartoes/${parcela.cartaoId}`);
+    batch.update(cartaoRef, { usado: increment(-parcela.valor) });
 
-    // 3. Incrementa o contador na Compra Pai
+    // Incrementa contador na Compra Pai
     if (parcela.compraId) {
-      const compraRef = doc(this.firestore, `users/${user.uid}/compras/${parcela.compraId}`);
-      batch.update(compraRef, {
-        parcelasPagas: increment(1)
-      });
+      const compraRef = doc(this.firestore, `households/${householdId}/compras/${parcela.compraId}`);
+      batch.update(compraRef, { parcelasPagas: increment(1) });
     }
 
     return batch.commit();
   }
 }
-
-
-

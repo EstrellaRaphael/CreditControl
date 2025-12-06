@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { LucideAngularModule, Plus, ShoppingBag, Calendar, CreditCard, Trash2, Search, Filter, X, Edit } from 'lucide-angular';
 import { CompraService } from '../../../services/compra';
 import { CategoriaService } from '../../../services/categoria';
+import { HouseholdService } from '../../../services/household.service';
 import { CompraModalComponent } from '../compra-modal/compra-modal';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
@@ -27,6 +28,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 export class ComprasPageComponent implements OnInit, OnDestroy {
   private compraService = inject(CompraService);
   private categoriaService = inject(CategoriaService);
+  private householdService = inject(HouseholdService);
   private toastr = inject(ToastrService);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
@@ -120,18 +122,29 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   }
 
   openNewCompraModal() {
+    if (!this.householdService.hasPermission('managePurchases')) {
+      this.toastr.warning('Você não tem permissão para adicionar compras', 'Acesso negado');
+      return;
+    }
     this.editingCompra = null;
     this.isModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   editCompra(compra: Compra) {
+    if (!this.householdService.hasPermission('managePurchases')) {
+      this.toastr.warning('Você não tem permissão para editar compras', 'Acesso negado');
+      return;
+    }
     this.editingCompra = compra;
     this.isModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   closeModal() {
     this.isModalOpen = false;
     this.editingCompra = null;
+    this.cdr.detectChanges();
   }
 
   toggleFilters() {

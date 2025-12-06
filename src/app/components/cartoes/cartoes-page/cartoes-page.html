@@ -57,6 +57,9 @@
                         <div class="flex flex-col">
                             <span class="text-[10px] uppercase tracking-wider opacity-60">Vencimento</span>
                             <span class="font-medium">Dia {{ cartao.diaVencimento }}</span>
+                            <span *ngIf="cartao.createdByName" class="text-[10px] opacity-50 mt-1">
+                                Adicionado por {{ cartao.createdByName }}
+                            </span>
                         </div>
 
                         <!-- Actions (Visible on hover for desktop, always for mobile via menu or simple buttons) -->
