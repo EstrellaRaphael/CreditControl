@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Compra, Categoria } from '../../../models/core.types';
 import { Observable, combineLatest } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { map, startWith, switchMap } from 'rxjs/operators';
 import { LucideAngularModule, Plus, ShoppingBag, Calendar, CreditCard, Trash2, Search, Filter, X } from 'lucide-angular';
 import { CompraService } from '../../../services/compra';
 import { CategoriaService } from '../../../services/categoria';
@@ -21,11 +21,7 @@ export class ComprasPageComponent {
   private categoriaService = inject(CategoriaService);
   private toastr = inject(ToastrService);
 
-  // Dados brutos
-  private comprasRaw$ = this.compraService.getCompras();
-  categorias$ = this.categoriaService.getCategorias();
-
-  // Controles de Filtro
+  // Controles de Filtro (Definidos primeiro para evitar erro de inicialização)
   searchControl = new FormControl('');
   categoryControl = new FormControl('');
   startDateControl = new FormControl('');
@@ -33,32 +29,36 @@ export class ComprasPageComponent {
   minPriceControl = new FormControl('');
   maxPriceControl = new FormControl('');
 
-  // Filtros combinados
+  // Dados filtrados no servidor (Data)
+  // Combina os controles de data para disparar a busca no servidor
+  private dateFilter$ = combineLatest([
+    this.startDateControl.valueChanges.pipe(startWith('')),
+    this.endDateControl.valueChanges.pipe(startWith(''))
+  ]);
+
+  // Stream principal de dados que vem do servidor
+  private comprasServer$ = this.dateFilter$.pipe(
+    switchMap(([start, end]) => this.compraService.getCompras(start || undefined, end || undefined))
+  );
+
+  categorias$ = this.categoriaService.getCategorias();
+
+  // Filtros combinados (Cliente)
+  // Aplica os demais filtros (texto, categoria, preço) nos dados retornados pelo servidor
   filteredCompras$: Observable<Compra[]> = combineLatest([
-    this.comprasRaw$,
+    this.comprasServer$,
     this.searchControl.valueChanges.pipe(startWith('')),
     this.categoryControl.valueChanges.pipe(startWith('')),
-    this.startDateControl.valueChanges.pipe(startWith('')),
-    this.endDateControl.valueChanges.pipe(startWith('')),
     this.minPriceControl.valueChanges.pipe(startWith('')),
     this.maxPriceControl.valueChanges.pipe(startWith(''))
   ]).pipe(
-    map(([compras, search, category, startDate, endDate, minPrice, maxPrice]) => {
+    map(([compras, search, category, minPrice, maxPrice]) => {
       return compras.filter(compra => {
         // Filtro de Texto (Nome)
         const matchesSearch = !search || compra.descricao.toLowerCase().includes(search.toLowerCase());
 
         // Filtro de Categoria
         const matchesCategory = !category || compra.categoria === category;
-
-        // Filtro de Data
-        let matchesDate = true;
-        if (startDate) {
-          matchesDate = matchesDate && compra.dataCompra >= startDate;
-        }
-        if (endDate) {
-          matchesDate = matchesDate && compra.dataCompra <= endDate;
-        }
 
         // Filtro de Preço
         let matchesPrice = true;
@@ -69,7 +69,7 @@ export class ComprasPageComponent {
           matchesPrice = matchesPrice && compra.valorTotal <= Number(maxPrice);
         }
 
-        return matchesSearch && matchesCategory && matchesDate && matchesPrice;
+        return matchesSearch && matchesCategory && matchesPrice;
       });
     })
   );

@@ -196,4 +196,10 @@
             <p class="text-gray-400 animate-pulse">Carregando dashboard...</p>
         </div>
     </div>
+
 </ng-template>
+
+<app-confirm-modal [isOpen]="isModalOpen" [title]="modalConfig.title" [message]="modalConfig.message"
+    [type]="modalConfig.type" [confirmText]="modalConfig.confirmText" (confirm)="modalConfig.action()"
+    (cancel)="isModalOpen = false">
+</app-confirm-modal>

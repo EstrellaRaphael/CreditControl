@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check } from 'lucide-angular';
 import { Observable, BehaviorSubject, switchMap, map } from 'rxjs';
 import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts';
+
+import { ConfirmModalComponent } from '../shared/confirm-modal/confirm-modal.component';
 import { DashboardService } from '../../services/dashboard';
 import { Cartao, Parcela } from '../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
@@ -10,7 +12,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, NgxChartsModule],
+  imports: [CommonModule, LucideAngularModule, NgxChartsModule, ConfirmModalComponent],
   templateUrl: './dashboard.html'
 })
 export class DashboardComponent implements OnInit {
@@ -23,6 +25,16 @@ export class DashboardComponent implements OnInit {
     mes: this.currentDate.getMonth() + 1,
     ano: this.currentDate.getFullYear()
   });
+
+  // Controle do Modal
+  isModalOpen = false;
+  modalConfig = {
+    title: '',
+    message: '',
+    type: 'warning' as 'warning' | 'danger' | 'info',
+    confirmText: 'Confirmar',
+    action: () => { }
+  };
 
   public LegendPosition = LegendPosition;
 
@@ -128,24 +140,36 @@ export class DashboardComponent implements OnInit {
     return !parcelas.some(p => p.status === 'PENDENTE');
   }
 
-  async pagarFatura() {
+  pagarFatura() {
     const current = this.dateControl$.value;
     const mesNome = this.getMonthName(current.mes);
 
-    if (confirm(`Deseja confirmar o pagamento da fatura de ${mesNome}? Isso irá liberar o limite dos seus cartões.`)) {
-      try {
-        const qtdPagas = await this.dashboardService.pagarFaturaMensal(current.mes, current.ano);
+    this.modalConfig = {
+      title: 'Pagar Fatura',
+      message: `Deseja confirmar o pagamento da fatura de ${mesNome}? Isso irá liberar o limite dos seus cartões.`,
+      type: 'warning',
+      confirmText: 'Pagar Fatura',
+      action: () => this.processarPagamento()
+    };
+    this.isModalOpen = true;
+  }
 
-        if (qtdPagas > 0) {
-          this.toastr.success(`${qtdPagas} parcelas baixadas com sucesso!`, 'Fatura Paga');
-          this.toastr.info('Seu limite disponível foi atualizado.', 'Limite Liberado');
-        } else {
-          this.toastr.warning('Nenhuma parcela pendente encontrada.', 'Aviso');
-        }
-      } catch (error) {
-        console.error(error);
-        this.toastr.error('Erro ao processar pagamento.', 'Erro');
+  async processarPagamento() {
+    this.isModalOpen = false;
+    const current = this.dateControl$.value;
+
+    try {
+      const qtdPagas = await this.dashboardService.pagarFaturaMensal(current.mes, current.ano);
+
+      if (qtdPagas > 0) {
+        this.toastr.success(`${qtdPagas} parcelas baixadas com sucesso!`, 'Fatura Paga');
+        this.toastr.info('Seu limite disponível foi atualizado.', 'Limite Liberado');
+      } else {
+        this.toastr.warning('Nenhuma parcela pendente encontrada.', 'Aviso');
       }
+    } catch (error) {
+      console.error(error);
+      this.toastr.error('Erro ao processar pagamento.', 'Erro');
     }
   }
 }

@@ -9,11 +9,12 @@ import {
   onSnapshot,
   increment,
   getDoc,
-  where, getDocs // <--- Adicione getDocs e where // <--- ADICIONE ISSO
+  where, getDocs, limit
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { Observable, switchMap, of, firstValueFrom } from 'rxjs';
 import { Compra, Cartao, Parcela } from '../models/core.types';
+import { InstallmentCalculator } from '../utils/installment-calculator';
 
 @Injectable({
   providedIn: 'root'
@@ -23,15 +24,29 @@ export class CompraService {
   private authService = inject(AuthService);
 
   // Lista compras em tempo real (ordenadas por data)
-  getCompras(): Observable<Compra[]> {
+  getCompras(start?: string, end?: string): Observable<Compra[]> {
     return this.authService.user$.pipe(
       switchMap(user => {
         if (!user) return of([]);
 
         return new Observable<Compra[]>(observer => {
           const comprasRef = collection(this.firestore, `users/${user.uid}/compras`);
-          // Ordena por data da compra (mais recentes primeiro)
-          const q = query(comprasRef, orderBy('dataCompra', 'desc'));
+
+          let constraints: any[] = [orderBy('dataCompra', 'desc')];
+
+          if (start) {
+            constraints.push(where('dataCompra', '>=', start));
+          }
+          if (end) {
+            constraints.push(where('dataCompra', '<=', end));
+          }
+
+          // Se não tiver filtro de data, limita a 100 para não travar
+          if (!start && !end) {
+            constraints.push(limit(100));
+          }
+
+          const q = query(comprasRef, ...constraints);
 
           const unsubscribe = onSnapshot(q, (snapshot) => {
             const compras = snapshot.docs.map(doc => ({
@@ -71,7 +86,7 @@ export class CompraService {
     batch.set(compraRef, novaCompra);
 
     // 3. Lógica de Parcelas (RN002 e RN003)
-    const parcelas = this.calcularParcelas(novaCompra, cartao, user.uid, compraId);
+    const parcelas = InstallmentCalculator.calculate(novaCompra, cartao, user.uid, compraId);
 
     // Adiciona cada parcela no Batch
     parcelas.forEach(parcela => {
@@ -145,74 +160,5 @@ export class CompraService {
     }
 
     return batch.commit();
-  }
-
-  // --- MÉTODOS AUXILIARES DE CÁLCULO (RN002 e RN003) ---
-
-  private calcularParcelas(compra: Compra, cartao: Cartao, userId: string, compraId: string): Parcela[] {
-    const parcelas: Parcela[] = [];
-    const dataCompra = new Date(compra.dataCompra + 'T12:00:00'); // Fuso horário safe
-    const diaCompra = dataCompra.getDate();
-
-    // RN002: Lógica do Melhor Dia (Fechamento)
-    let mesReferencia = dataCompra.getMonth() + 1; // JS é 0-11
-    let anoReferencia = dataCompra.getFullYear();
-
-    // Se comprou DEPOIS ou NO DIA do fechamento, joga para o próximo mês
-    if (diaCompra >= cartao.diaFechamento) {
-      mesReferencia++;
-      if (mesReferencia > 12) {
-        mesReferencia = 1;
-        anoReferencia++;
-      }
-    }
-
-    // Determina quantidade de loops
-    const qtd = compra.tipo === 'recorrente' ? 12 : (compra.qtdParcelas || 1);
-    // Nota: Recorrente criamos 12 meses para frente como MVP.
-
-    // RN003: Cálculo dos valores (Centavos na 1ª parcela)
-    const valorTotal = compra.valorTotal;
-    const qtdReal = compra.tipo === 'recorrente' ? 1 : (compra.qtdParcelas || 1); // Divisor matemático
-
-    // Se for recorrente, o valor é fixo todo mês. Se for parcelado, divide.
-    let valorParcelaBase = 0;
-    let primeiraParcela = 0;
-
-    if (compra.tipo === 'recorrente') {
-      valorParcelaBase = valorTotal;
-      primeiraParcela = valorTotal;
-    } else {
-      valorParcelaBase = Math.floor((valorTotal / qtdReal) * 100) / 100; // Arredonda para baixo 2 casas
-      const diferenca = valorTotal - (valorParcelaBase * qtdReal);
-      primeiraParcela = valorParcelaBase + diferenca; // Ajuste de centavos
-    }
-
-    for (let i = 1; i <= qtd; i++) {
-      // Cria a data de vencimento (dia do vencimento do cartão naquele mês)
-      // Nota: JS Date month index é 0-based
-      const dataVenc = new Date(anoReferencia, mesReferencia - 1, cartao.diaVencimento);
-
-      parcelas.push({
-        userId,
-        compraId,
-        cartaoId: cartao.id!,
-        numeroParcela: i,
-        valor: (i === 1 && compra.tipo !== 'recorrente') ? primeiraParcela : valorParcelaBase,
-        mesReferencia,
-        anoReferencia,
-        status: 'PENDENTE',
-        dataVencimento: dataVenc.toISOString().split('T')[0]
-      });
-
-      // Avança para o próximo mês
-      mesReferencia++;
-      if (mesReferencia > 12) {
-        mesReferencia = 1;
-        anoReferencia++;
-      }
-    }
-
-    return parcelas;
   }
 }

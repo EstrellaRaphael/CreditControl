@@ -1,0 +1,48 @@
+<div *ngIf="isOpen"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scale-in border border-gray-100 dark:border-gray-700">
+
+        <!-- Header -->
+        <div class="p-6 flex items-start gap-4">
+            <div [ngClass]="{
+        'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400': type === 'danger',
+        'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400': type === 'warning',
+        'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400': type === 'info'
+      }" class="p-3 rounded-full shrink-0">
+                <lucide-icon [name]="icons.alert" [size]="24"></lucide-icon>
+            </div>
+
+            <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    {{ title }}
+                </h3>
+                <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                    {{ message }}
+                </p>
+            </div>
+
+            <button (click)="onCancel()"
+                class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors">
+                <lucide-icon [name]="icons.close" [size]="20"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div
+            class="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
+            <button (click)="onCancel()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all">
+                {{ cancelText }}
+            </button>
+
+            <button (click)="onConfirm()" [ngClass]="{
+          'bg-red-600 hover:bg-red-700 focus:ring-red-500': type === 'danger',
+          'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500': type === 'warning',
+          'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': type === 'info'
+        }" class="px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all transform active:scale-95">
+                {{ confirmText }}
+            </button>
+        </div>
+    </div>
+</div>
