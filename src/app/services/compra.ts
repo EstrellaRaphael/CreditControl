@@ -106,66 +106,101 @@ export class CompraService {
     return batch.commit();
   }
 
-  // NOVO: Atualiza Compra (Estorno + Recriação)
+  // NOVO: Atualiza Compra com verificação inteligente (Safe Edit vs Full Reset)
   async updateCompra(compraId: string, novosDados: Partial<Compra>, cartao: Cartao) {
     const user = await firstValueFrom(this.authService.user$);
     if (!user) throw new Error('Usuário não autenticado');
 
     const batch = writeBatch(this.firestore);
 
-    // 1. Buscar a compra antiga para saber o valor a estornar
+    // 1. Buscar a compra antiga
     const compraRef = doc(this.firestore, `users/${user.uid}/compras/${compraId}`);
     const compraSnap = await getDoc(compraRef);
     if (!compraSnap.exists()) throw new Error('Compra não encontrada');
     const compraAntiga = compraSnap.data() as Compra;
 
-    // 2. Estornar limite do cartão antigo
-    if (compraAntiga.cartaoId) {
-      const cartaoAntigoRef = doc(this.firestore, `users/${user.uid}/cartoes/${compraAntiga.cartaoId}`);
-      // Calcula quanto já foi pago para não estornar o que não deve
-      // Simplificação: Assumimos que ao editar, resetamos o estado financeiro da compra
-      // Se o usuário já pagou parcelas, isso é complexo. 
-      // DECISÃO: Ao editar, se o valor mudar, consideramos como uma nova transação de ajuste.
-      // Mas para simplificar o MVP 2.0: Revertemos o valor TOTAL original do limite e aplicamos o novo.
-      // O usuário deve estar ciente que editar reseta o status das parcelas.
+    // 2. Detectar se houve mudança financeira crítica
+    const mudouValor = novosDados.valorTotal !== undefined && Math.abs(novosDados.valorTotal - compraAntiga.valorTotal) > 0.01;
+    const mudouQtdParcelas = novosDados.qtdParcelas !== undefined && novosDados.qtdParcelas !== compraAntiga.qtdParcelas;
+    const mudouData = novosDados.dataCompra !== undefined && novosDados.dataCompra !== compraAntiga.dataCompra;
+    const mudouCartao = novosDados.cartaoId !== undefined && novosDados.cartaoId !== compraAntiga.cartaoId;
+    const mudouTipo = novosDados.tipo !== undefined && novosDados.tipo !== compraAntiga.tipo;
 
-      batch.update(cartaoAntigoRef, {
-        usado: increment(-compraAntiga.valorTotal)
+    const isFinanceiro = mudouValor || mudouQtdParcelas || mudouData || mudouCartao || mudouTipo;
+
+    if (!isFinanceiro) {
+      // === CAMINHO SEGURO (Apenas dados cadastrais) ===
+      // Atualiza apenas a Compra (Pai) e as Parcelas (Filhas) com o novo nome/cartão Visual
+      // NÃO mexe em valores, status de pagamento ou limites.
+
+      // Atualiza Compra
+      batch.update(compraRef, {
+        ...novosDados,
+        cartaoNome: cartao.nome, // Atualiza visual
+        cartaoCor: cartao.cor
       });
+
+      // Atualiza nome da compra/cartão nas parcelas existentes (para manter consistência visual)
+      const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
+      const q = query(parcelasRef, where('compraId', '==', compraId));
+      const parcelasSnap = await getDocs(q);
+
+      parcelasSnap.forEach(docSnap => {
+        batch.update(docSnap.ref, {
+          compraDescricao: novosDados.descricao || compraAntiga.descricao,
+          cartaoNome: cartao.nome
+          // Não muda status, valor, data...
+        });
+      });
+
+      return batch.commit();
+
+    } else {
+      // === CAMINHO DESTRUTIVO (Reset Financeiro) ===
+      // Logica antiga: Estorna tudo e recria.
+
+      // A. Estornar limite do cartão antigo
+      if (compraAntiga.cartaoId) {
+        const cartaoAntigoRef = doc(this.firestore, `users/${user.uid}/cartoes/${compraAntiga.cartaoId}`);
+        // RESET TOTAL: Reverte o valor total original
+        batch.update(cartaoAntigoRef, {
+          usado: increment(-compraAntiga.valorTotal)
+        });
+      }
+
+      // B. Deletar parcelas antigas
+      const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
+      const q = query(parcelasRef, where('compraId', '==', compraId));
+      const parcelasSnapshot = await getDocs(q);
+      parcelasSnapshot.forEach((docSnapshot) => {
+        batch.delete(docSnapshot.ref);
+      });
+
+      // C. Atualizar Compra (Com Reset de Pagamento)
+      const compraAtualizada: Compra = {
+        ...compraAntiga,
+        ...novosDados,
+        cartaoNome: cartao.nome,
+        cartaoCor: cartao.cor,
+        parcelasPagas: 0 // <--- O Reset acontece aqui
+      };
+      batch.set(compraRef, compraAtualizada);
+
+      // D. Gerar novas parcelas
+      const novasParcelas = InstallmentCalculator.calculate(compraAtualizada, cartao, user.uid, compraId);
+      novasParcelas.forEach(parcela => {
+        const novaParcelaRef = doc(collection(this.firestore, `users/${user.uid}/parcelas`));
+        batch.set(novaParcelaRef, parcela);
+      });
+
+      // E. Atualizar limite do (novo) cartão
+      const novoCartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${cartao.id}`);
+      batch.update(novoCartaoRef, {
+        usado: increment(compraAtualizada.valorTotal)
+      });
+
+      return batch.commit();
     }
-
-    // 3. Deletar parcelas antigas
-    const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
-    const q = query(parcelasRef, where('compraId', '==', compraId));
-    const parcelasSnapshot = await getDocs(q);
-    parcelasSnapshot.forEach((docSnapshot) => {
-      batch.delete(docSnapshot.ref);
-    });
-
-    // 4. Atualizar dados da Compra
-    const compraAtualizada: Compra = {
-      ...compraAntiga,
-      ...novosDados,
-      cartaoNome: cartao.nome, // Atualiza nome do cartão caso tenha mudado
-      cartaoCor: cartao.cor,
-      parcelasPagas: 0 // Reseta parcelas pagas ao editar (Safety first)
-    };
-    batch.set(compraRef, compraAtualizada);
-
-    // 5. Gerar novas parcelas
-    const novasParcelas = InstallmentCalculator.calculate(compraAtualizada, cartao, user.uid, compraId);
-    novasParcelas.forEach(parcela => {
-      const novaParcelaRef = doc(collection(this.firestore, `users/${user.uid}/parcelas`));
-      batch.set(novaParcelaRef, parcela);
-    });
-
-    // 6. Atualizar limite do (novo) cartão
-    const novoCartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${cartao.id}`);
-    batch.update(novoCartaoRef, {
-      usado: increment(compraAtualizada.valorTotal)
-    });
-
-    return batch.commit();
   }
 
   async deleteCompra(compra: Compra) {

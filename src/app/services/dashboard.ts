@@ -66,39 +66,62 @@ export class DashboardService {
   }
 
   getHistorico(mesAtual: number, anoAtual: number): Observable<{ name: string, value: number }[]> {
-    const mesesParaBuscar = [];
+    return this.authService.user$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
 
-    // 1. Calcula os últimos 6 meses (incluindo o atual)
-    for (let i = 5; i >= 0; i--) {
-      let mes = mesAtual - i;
-      let ano = anoAtual;
+        // OTIMIZAÇÃO: Busca um range de datas de uma vez só
+        // Define o intervalo (Últimos 6 meses)
+        const hoje = new Date();
+        const dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Fim deste mês
+        const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1); // 5 meses atrás
 
-      if (mes <= 0) {
-        mes += 12;
-        ano -= 1;
-      }
-      mesesParaBuscar.push({ mes, ano });
-    }
+        const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
+        // Note: Precisamos de um índice composto: userId + dataVencimento
+        const q = query(
+          parcelasRef,
+          where('dataVencimento', '>=', dataInicio.toISOString().split('T')[0]),
+          where('dataVencimento', '<=', dataFim.toISOString().split('T')[0])
+        );
 
-    // 2. Cria um array de Observables (6 chamadas paralelas)
-    const requests = mesesParaBuscar.map(data => {
-      // Reutiliza o getParcelasDoMes, mas pega apenas 1 vez (take 1) para não manter 6 conexões abertas
-      return this.getParcelasDoMes(data.mes, data.ano).pipe(
-        take(1),
-        map(parcelas => {
-          // Soma o total daquele mês
-          const total = parcelas.reduce((acc, p) => acc + p.valor, 0);
-          // Retorna no formato que o gráfico gosta
-          return {
-            name: `${this.getNomeMesAbreviado(data.mes)}/${data.ano.toString().slice(-2)}`,
-            value: total
-          };
-        })
-      );
-    });
+        return new Observable<{ name: string, value: number }[]>(observer => {
+          getDocs(q).then(snapshot => {
+            // Agregação em Memória
+            const mapStats = new Map<string, number>();
 
-    // 3. Executa todas as 6 requisições em paralelo e devolve o array ordenado
-    return forkJoin(requests);
+            // Inicializa os 6 meses com 0 para garantir que apareçam no gráfico
+            for (let i = 5; i >= 0; i--) {
+              let m = mesAtual - i;
+              let a = anoAtual;
+              if (m <= 0) { m += 12; a -= 1; }
+              if (m > 12) { m -= 12; a += 1; }
+              const key = `${m}/${a}`;
+              mapStats.set(key, 0);
+            }
+
+            snapshot.forEach(doc => {
+              const p = doc.data() as Parcela;
+              const key = `${p.mesReferencia}/${p.anoReferencia}`;
+              if (mapStats.has(key)) {
+                mapStats.set(key, (mapStats.get(key) || 0) + p.valor);
+              }
+            });
+
+            // Formata para o gráfico
+            const result = Array.from(mapStats.entries()).map(([key, valor]) => {
+              const [m, a] = key.split('/').map(Number);
+              return {
+                name: `${this.getNomeMesAbreviado(m)}/${a.toString().slice(-2)}`,
+                value: valor
+              };
+            });
+
+            observer.next(result);
+            observer.complete();
+          }).catch(err => observer.error(err));
+        });
+      })
+    );
   }
 
   // Helper simples para nome curto (Jan, Fev...)
