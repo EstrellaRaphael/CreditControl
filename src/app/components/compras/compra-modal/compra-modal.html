@@ -3,7 +3,7 @@
         class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
 
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 shrink-0">
-            <h2 class="text-lg font-bold text-gray-900">Nova Compra</h2>
+            <h2 class="text-lg font-bold text-gray-900">{{ compraToEdit ? 'Editar Compra' : 'Nova Compra' }}</h2>
             <button (click)="onClose()" class="text-gray-400 hover:text-gray-600">
                 <lucide-icon [img]="icons.close" class="w-5 h-5"></lucide-icon>
             </button>
@@ -125,7 +125,7 @@
                 class="px-4 py-2 text-white bg-primary rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2">
                 <span *ngIf="isLoading"
                     class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                Adicionar Compra
+                {{ compraToEdit ? 'Salvar Alterações' : 'Adicionar Compra' }}
             </button>
         </div>
 

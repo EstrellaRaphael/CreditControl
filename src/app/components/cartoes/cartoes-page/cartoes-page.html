@@ -89,3 +89,9 @@
 </div>
 
 <app-cartao-modal [isOpen]="isModalOpen" [cartaoToEdit]="editingCartao" (close)="closeModal()"></app-cartao-modal>
+
+<app-confirm-modal [isOpen]="isConfirmModalOpen" [title]="confirmModalConfig.title"
+    [message]="confirmModalConfig.message" [type]="confirmModalConfig.type"
+    [confirmText]="confirmModalConfig.confirmText" (confirm)="confirmModalConfig.action()"
+    (cancel)="isConfirmModalOpen = false">
+</app-confirm-modal>

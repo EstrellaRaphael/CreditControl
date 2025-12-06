@@ -6,12 +6,12 @@ import { Cartao } from '../../../models/core.types';
 import { CartaoModalComponent } from '../cartao-modal/cartao-modal';
 import { CartaoService } from '../../../services/cartao';
 import { ToastrService } from 'ngx-toastr';
-// 1. Importar o Modal
+import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-cartoes-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CartaoModalComponent], // 2. Adicionar nos imports
+  imports: [CommonModule, LucideAngularModule, CartaoModalComponent, ConfirmModalComponent],
   templateUrl: './cartoes-page.html'
 })
 export class CartoesPage {
@@ -23,6 +23,16 @@ export class CartoesPage {
   // Controle do Modal
   isModalOpen = false;
   editingCartao: Cartao | null = null;
+
+  // Controle do Modal de Confirmação
+  isConfirmModalOpen = false;
+  confirmModalConfig = {
+    title: '',
+    message: '',
+    type: 'warning' as 'warning' | 'danger' | 'info',
+    confirmText: 'Confirmar',
+    action: () => { }
+  };
 
   readonly icons = { plus: Plus, card: CreditCard, trash: Trash2, edit: Edit };
 
@@ -51,15 +61,26 @@ export class CartoesPage {
     this.editingCartao = null;
   }
 
-async deleteCartao(cartao: Cartao) {
+  deleteCartao(cartao: Cartao) {
     if (!cartao.id) return;
-    if(confirm(`Tem certeza que deseja excluir o cartão ${cartao.nome}?`)) {
-      try {
-        await this.cartaoService.deleteCartao(cartao.id);
-        this.toastr.success('Cartão excluído com sucesso.'); // <--- Feedback
-      } catch (error) {
-        this.toastr.error('Erro ao excluir cartão.');
-      }
+
+    this.confirmModalConfig = {
+      title: 'Excluir Cartão',
+      message: `Tem certeza que deseja excluir o cartão ${cartao.nome}? Isso não apagará as compras já realizadas.`,
+      type: 'danger',
+      confirmText: 'Excluir',
+      action: () => this.processarExclusao(cartao.id!)
+    };
+    this.isConfirmModalOpen = true;
+  }
+
+  async processarExclusao(cartaoId: string) {
+    this.isConfirmModalOpen = false;
+    try {
+      await this.cartaoService.deleteCartao(cartaoId);
+      this.toastr.success('Cartão excluído com sucesso.');
+    } catch (error) {
+      this.toastr.error('Erro ao excluir cartão.');
     }
   }
 }

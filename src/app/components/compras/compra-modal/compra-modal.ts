@@ -24,6 +24,7 @@ export class CompraModalComponent implements OnInit, OnChanges {
   private toastr = inject(ToastrService);
 
   @Input() isOpen = false;
+  @Input() compraToEdit: Compra | null = null; // Input para edição
   @Output() close = new EventEmitter<void>();
 
   isLoading = false;
@@ -56,7 +57,7 @@ export class CompraModalComponent implements OnInit, OnChanges {
 
       if (tipo === 'parcelado') {
         parcelasCtrl?.setValidators([Validators.required, Validators.min(2), Validators.max(24)]);
-        parcelasCtrl?.setValue(2); // Default para 2x
+        if (parcelasCtrl?.value < 2) parcelasCtrl?.setValue(2);
       } else {
         parcelasCtrl?.clearValidators();
         parcelasCtrl?.setValue(1);
@@ -68,15 +69,30 @@ export class CompraModalComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isOpen'] && changes['isOpen'].currentValue === true) {
       this.isLoading = false;
-      this.form.reset({
-        descricao: '',
-        valorTotal: '',
-        dataCompra: new Date().toISOString().split('T')[0], // Hoje
-        cartaoId: '',
-        categoria: '',
-        tipo: 'avista',
-        qtdParcelas: 1
-      });
+
+      if (this.compraToEdit) {
+        // Modo Edição: Preenche o formulário
+        this.form.patchValue({
+          descricao: this.compraToEdit.descricao,
+          valorTotal: this.compraToEdit.valorTotal,
+          dataCompra: this.compraToEdit.dataCompra,
+          cartaoId: this.compraToEdit.cartaoId,
+          categoria: this.compraToEdit.categoria,
+          tipo: this.compraToEdit.tipo,
+          qtdParcelas: this.compraToEdit.qtdParcelas || 1
+        });
+      } else {
+        // Modo Criação: Limpa o formulário
+        this.form.reset({
+          descricao: '',
+          valorTotal: '',
+          dataCompra: new Date().toISOString().split('T')[0], // Hoje
+          cartaoId: '',
+          categoria: '',
+          tipo: 'avista',
+          qtdParcelas: 1
+        });
+      }
     }
   }
 
@@ -99,18 +115,31 @@ export class CompraModalComponent implements OnInit, OnChanges {
     }
 
     try {
-      await this.compraService.addCompra({
-        descricao: formData.descricao,
-        valorTotal: Number(formData.valorTotal),
-        dataCompra: formData.dataCompra,
-        cartaoId: formData.cartaoId,
-        categoria: formData.categoria,
-        tipo: formData.tipo,
-        qtdParcelas: Number(formData.qtdParcelas)
-      }, cartaoSelecionado);
-
-      // Sucesso!
-      this.toastr.success('Compra lançada com sucesso!', 'Feito!');
+      if (this.compraToEdit && this.compraToEdit.id) {
+        // Atualizar Compra Existente
+        await this.compraService.updateCompra(this.compraToEdit.id, {
+          descricao: formData.descricao,
+          valorTotal: Number(formData.valorTotal),
+          dataCompra: formData.dataCompra,
+          cartaoId: formData.cartaoId,
+          categoria: formData.categoria,
+          tipo: formData.tipo,
+          qtdParcelas: Number(formData.qtdParcelas)
+        }, cartaoSelecionado);
+        this.toastr.success('Compra atualizada com sucesso!', 'Atualizado');
+      } else {
+        // Criar Nova Compra
+        await this.compraService.addCompra({
+          descricao: formData.descricao,
+          valorTotal: Number(formData.valorTotal),
+          dataCompra: formData.dataCompra,
+          cartaoId: formData.cartaoId,
+          categoria: formData.categoria,
+          tipo: formData.tipo,
+          qtdParcelas: Number(formData.qtdParcelas)
+        }, cartaoSelecionado);
+        this.toastr.success('Compra lançada com sucesso!', 'Feito!');
+      }
 
       this.ngZone.run(() => {
         this.isLoading = false;

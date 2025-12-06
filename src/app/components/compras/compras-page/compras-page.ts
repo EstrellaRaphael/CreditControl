@@ -3,17 +3,18 @@ import { CommonModule } from '@angular/common';
 import { Compra, Categoria } from '../../../models/core.types';
 import { Observable, combineLatest } from 'rxjs';
 import { map, startWith, switchMap } from 'rxjs/operators';
-import { LucideAngularModule, Plus, ShoppingBag, Calendar, CreditCard, Trash2, Search, Filter, X } from 'lucide-angular';
+import { LucideAngularModule, Plus, ShoppingBag, Calendar, CreditCard, Trash2, Search, Filter, X, Edit } from 'lucide-angular';
 import { CompraService } from '../../../services/compra';
 import { CategoriaService } from '../../../services/categoria';
 import { CompraModalComponent } from '../compra-modal/compra-modal';
+import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 import { ToastrService } from 'ngx-toastr';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-compras-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CompraModalComponent, ReactiveFormsModule],
+  imports: [CommonModule, LucideAngularModule, CompraModalComponent, ConfirmModalComponent, ReactiveFormsModule],
   templateUrl: './compras-page.html'
 })
 export class ComprasPageComponent {
@@ -75,7 +76,19 @@ export class ComprasPageComponent {
   );
 
   isModalOpen = false;
+  editingCompra: Compra | null = null; // Compra sendo editada
   showFilters = false; // Toggle para mobile/desktop se quiser esconder
+
+  // Controle do Modal de Confirmação
+  isConfirmModalOpen = false;
+  confirmModalConfig = {
+    title: '',
+    message: '',
+    type: 'warning' as 'warning' | 'danger' | 'info',
+    confirmText: 'Confirmar',
+    action: () => { }
+  };
+
   readonly icons = {
     plus: Plus,
     bag: ShoppingBag,
@@ -84,15 +97,23 @@ export class ComprasPageComponent {
     trash: Trash2,
     search: Search,
     filter: Filter,
-    x: X
+    x: X,
+    edit: Edit
   };
 
   openNewCompraModal() {
+    this.editingCompra = null; // Garante que é nova compra
+    this.isModalOpen = true;
+  }
+
+  editCompra(compra: Compra) {
+    this.editingCompra = compra;
     this.isModalOpen = true;
   }
 
   closeModal() {
     this.isModalOpen = false;
+    this.editingCompra = null;
   }
 
   toggleFilters() {
@@ -120,14 +141,24 @@ export class ComprasPageComponent {
     return `${day}/${month}/${year}`;
   }
 
-  async deleteCompra(compra: Compra) {
-    if (confirm(`Deseja excluir a compra "${compra.descricao}"?`)) {
-      try {
-        await this.compraService.deleteCompra(compra);
-        this.toastr.success('Compra removida.', 'Feito');
-      } catch (error) {
-        this.toastr.error('Erro ao excluir compra.');
-      }
+  deleteCompra(compra: Compra) {
+    this.confirmModalConfig = {
+      title: 'Excluir Compra',
+      message: `Deseja excluir a compra "${compra.descricao}"? Essa ação não pode ser desfeita.`,
+      type: 'danger',
+      confirmText: 'Excluir',
+      action: () => this.processarExclusao(compra)
+    };
+    this.isConfirmModalOpen = true;
+  }
+
+  async processarExclusao(compra: Compra) {
+    this.isConfirmModalOpen = false;
+    try {
+      await this.compraService.deleteCompra(compra);
+      this.toastr.success('Compra removida.', 'Feito');
+    } catch (error) {
+      this.toastr.error('Erro ao excluir compra.');
     }
   }
 }

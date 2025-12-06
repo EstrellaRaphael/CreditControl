@@ -139,7 +139,12 @@
                     {{ formatMoney(compra.valorTotal) }}
                 </div>
 
-                <div class="col-span-1 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="col-span-1 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                    <button (click)="editCompra(compra)"
+                        class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors"
+                        title="Editar">
+                        <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
+                    </button>
                     <button (click)="deleteCompra(compra)"
                         class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Excluir">
@@ -183,10 +188,16 @@
 
                 <div class="flex flex-col items-end gap-3">
                     <span class="font-bold text-gray-900 text-lg">{{ formatMoney(compra.valorTotal) }}</span>
-                    <button (click)="deleteCompra(compra)"
-                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
-                    </button>
+                    <div class="flex gap-1">
+                        <button (click)="editCompra(compra)"
+                            class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
+                            <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
+                        </button>
+                        <button (click)="deleteCompra(compra)"
+                            class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -204,4 +215,10 @@
     </div>
 </div>
 
-<app-compra-modal [isOpen]="isModalOpen" (close)="closeModal()"></app-compra-modal>
+<app-compra-modal [isOpen]="isModalOpen" [compraToEdit]="editingCompra" (close)="closeModal()"></app-compra-modal>
+
+<app-confirm-modal [isOpen]="isConfirmModalOpen" [title]="confirmModalConfig.title"
+    [message]="confirmModalConfig.message" [type]="confirmModalConfig.type"
+    [confirmText]="confirmModalConfig.confirmText" (confirm)="confirmModalConfig.action()"
+    (cancel)="isConfirmModalOpen = false">
+</app-confirm-modal>
