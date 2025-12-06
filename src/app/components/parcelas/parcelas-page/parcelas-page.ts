@@ -11,6 +11,9 @@ import { ToastrService } from 'ngx-toastr';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { BadgeComponent } from '../../ui/badge/badge.component';
+import { ButtonComponent } from '../../ui/button/button.component';
+import { CardComponent } from '../../ui/card/card.component';
 
 // Interface estendida para exibição
 interface ParcelaEnriquecida extends Parcela {
@@ -24,7 +27,7 @@ interface ParcelaEnriquecida extends Parcela {
 @Component({
     selector: 'app-parcelas-page',
     standalone: true,
-    imports: [CommonModule, LucideAngularModule, ConfirmModalComponent, ReactiveFormsModule, SkeletonComponent, EmptyStateComponent],
+    imports: [CommonModule, LucideAngularModule, ConfirmModalComponent, ReactiveFormsModule, SkeletonComponent, EmptyStateComponent, BadgeComponent, ButtonComponent, CardComponent],
     templateUrl: './parcelas-page.html'
 })
 export class ParcelasPageComponent implements OnInit, OnDestroy {

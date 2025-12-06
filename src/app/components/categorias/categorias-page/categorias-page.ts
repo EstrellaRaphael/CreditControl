@@ -10,11 +10,14 @@ import { ToastrService } from 'ngx-toastr';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { ButtonComponent } from '../../ui/button/button.component';
+import { CardComponent } from '../../ui/card/card.component';
+import { InputComponent } from '../../ui/input/input.component';
 
 @Component({
     selector: 'app-categorias-page',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, ConfirmModalComponent, SkeletonComponent, EmptyStateComponent],
+    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, ConfirmModalComponent, SkeletonComponent, EmptyStateComponent, ButtonComponent, CardComponent, InputComponent],
     templateUrl: './categorias-page.html'
 })
 export class CategoriasPageComponent {

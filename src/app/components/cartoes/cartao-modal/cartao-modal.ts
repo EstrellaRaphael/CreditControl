@@ -4,12 +4,15 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angula
 import { LucideAngularModule, X, Check } from 'lucide-angular';
 import { Cartao } from '../../../models/core.types';
 import { CartaoService } from '../../../services/cartao';
-import { ToastrService } from 'ngx-toastr'; // Importe no topo
+import { ToastrService } from 'ngx-toastr';
+import { InputComponent } from '../../ui/input/input.component';
+import { SelectComponent } from '../../ui/select/select.component';
+import { ButtonComponent } from '../../ui/button/button.component';
 
 @Component({
   selector: 'app-cartao-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule], // Importante: ReactiveFormsModule
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputComponent, SelectComponent, ButtonComponent],
   templateUrl: './cartao-modal.html'
 })
 export class CartaoModalComponent implements OnChanges {
@@ -37,6 +40,15 @@ export class CartaoModalComponent implements OnChanges {
     '#14b8a6', // Teal
     '#6366f1'  // Indigo
   ];
+
+  readonly bandeiraOptions = [
+    { label: 'Mastercard', value: 'Mastercard' },
+    { label: 'Visa', value: 'Visa' },
+    { label: 'Elo', value: 'Elo' },
+    { label: 'Amex', value: 'Amex' }
+  ];
+
+  readonly dateOptions = Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }));
 
   // Configuração do Formulário
   form: FormGroup = this.fb.group({

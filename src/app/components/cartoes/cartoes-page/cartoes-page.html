@@ -6,11 +6,9 @@
             <h1 class="text-2xl font-bold text-gray-900">Meus Cartões</h1>
             <p class="text-gray-500">Gerencie seus limites e datas de vencimento</p>
         </div>
-        <button (click)="openNewCartaoModal()"
-            class="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-all font-medium shadow-lg shadow-gray-900/20 active:scale-95">
-            <lucide-icon [img]="icons.plus" class="w-5 h-5"></lucide-icon>
+        <app-button (action)="openNewCartaoModal()" [icon]="icons.plus">
             Novo Cartão
-        </button>
+        </app-button>
     </div>
 
     <div *ngIf="cartoes$ | async as cartoes; else loading">

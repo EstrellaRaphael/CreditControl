@@ -6,67 +6,53 @@
             <h1 class="text-2xl font-bold text-gray-900">Minhas Compras</h1>
             <p class="text-gray-500">Histórico de gastos e lançamentos</p>
         </div>
-        <button type="button" (click)="openNewCompraModal()" aria-label="Nova compra"
-            class="inline-flex items-center justify-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-medium shadow-lg shadow-primary/20 active:scale-95">
-            <lucide-icon [img]="icons.plus" class="w-5 h-5"></lucide-icon>
+        <app-button (action)="openNewCompraModal()" [icon]="icons.plus">
             Nova Compra
-        </button>
+        </app-button>
     </div>
 
     <!-- Filters Section -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
+    <app-card class="p-5 space-y-4">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="relative flex-1">
-                <lucide-icon [img]="icons.search"
-                    class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></lucide-icon>
-                <input [formControl]="searchControl" type="text" aria-label="Buscar compras"
-                    class="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-gray-400"
-                    placeholder="Buscar por nome...">
+                <app-input [formControl]="searchControl" placeholder="Buscar por nome..." [icon]="'search'"
+                    class="w-full"></app-input>
             </div>
-            <button type="button" (click)="toggleFilters()" aria-label="Mostrar filtros"
-                class="md:hidden flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700 font-medium transition-colors">
-                <lucide-icon [img]="icons.filter" class="w-4 h-4"></lucide-icon>
+            <app-button variant="secondary" (action)="toggleFilters()" class="md:hidden" [icon]="icons.filter"
+                aria-label="Mostrar filtros">
                 Filtros
-            </button>
+            </app-button>
         </div>
 
         <div [class.hidden]="!showFilters"
             class="md:grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t border-gray-100">
             <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Categoria</label>
-                <select [formControl]="categoryControl"
-                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none bg-white text-sm">
-                    <option value="">Todas</option>
-                    <option *ngFor="let cat of categorias" [value]="cat.nome">{{ cat.nome }}</option>
-                </select>
+                <app-select label="Categoria" [formControl]="categoryControl" [options]="categoryOptions"
+                    placeholder="Todas">
+                </app-select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Período</label>
                 <div class="flex gap-2">
-                    <input [formControl]="startDateControl" type="date"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none text-sm">
-                    <input [formControl]="endDateControl" type="date"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none text-sm">
+                    <app-input type="date" [formControl]="startDateControl"></app-input>
+                    <app-input type="date" [formControl]="endDateControl"></app-input>
                 </div>
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Valor (R$)</label>
                 <div class="flex gap-2">
-                    <input [formControl]="minPriceControl" type="number" placeholder="Min"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none text-sm">
-                    <input [formControl]="maxPriceControl" type="number" placeholder="Max"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none text-sm">
+                    <app-input type="number" [formControl]="minPriceControl" placeholder="Min"></app-input>
+                    <app-input type="number" [formControl]="maxPriceControl" placeholder="Max"></app-input>
                 </div>
             </div>
             <div class="flex items-end">
-                <button type="button" (click)="clearFilters()" aria-label="Limpar filtros"
-                    class="w-full px-4 py-2.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium">
-                    <lucide-icon [img]="icons.x" class="w-4 h-4"></lucide-icon>
+                <app-button variant="secondary" [block]="true" (action)="clearFilters()" [icon]="icons.x"
+                    aria-label="Limpar filtros">
                     Limpar Filtros
-                </button>
+                </app-button>
             </div>
         </div>
-    </div>
+    </app-card>
 
     <!-- Skeleton Loading -->
     <div *ngIf="isLoading" class="space-y-3">
@@ -89,30 +75,32 @@
         </div>
 
         <!-- Items -->
-        <div *ngFor="let compra of filteredCompras"
-            class="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200">
+        <app-card *ngFor="let compra of filteredCompras"
+            class="group p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200">
 
             <!-- Desktop Row -->
             <div class="hidden md:grid grid-cols-12 gap-4 items-center">
                 <div class="col-span-4">
                     <div class="font-bold text-gray-900 text-base">{{ compra.descricao }}</div>
                     <div class="flex items-center gap-2 mt-1 flex-wrap">
-                        <span
-                            class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-bold uppercase border border-gray-200">
+                        <app-badge variant="neutral" class="text-[10px] font-bold uppercase">
                             {{ compra.categoria }}
-                        </span>
-                        <span *ngIf="(compra.parcelasPagas || 0) >= compra.qtdParcelas"
-                            class="px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-[10px] font-bold border border-green-100">
+                        </app-badge>
+
+                        <app-badge *ngIf="(compra.parcelasPagas || 0) >= compra.qtdParcelas" variant="success"
+                            class="text-[10px] font-bold uppercase">
                             Quitada
-                        </span>
-                        <span *ngIf="compra.tipo === 'parcelado' && (compra.parcelasPagas || 0) < compra.qtdParcelas"
-                            class="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                        </app-badge>
+
+                        <app-badge
+                            *ngIf="compra.tipo === 'parcelado' && (compra.parcelasPagas || 0) < compra.qtdParcelas"
+                            variant="primary">
                             {{ compra.parcelasPagas || 0 }}/{{ compra.qtdParcelas }} pagas
-                        </span>
-                        <span *ngIf="compra.tipo === 'recorrente'"
-                            class="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                        </app-badge>
+
+                        <app-badge *ngIf="compra.tipo === 'recorrente'" variant="info">
                             Assinatura
-                        </span>
+                        </app-badge>
                     </div>
                 </div>
 
@@ -131,14 +119,13 @@
                 </div>
 
                 <div class="col-span-1 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                    <button type="button" (click)="editCompra(compra)" aria-label="Editar compra"
-                        class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
-                        <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
-                    </button>
-                    <button type="button" (click)="deleteCompra(compra)" aria-label="Excluir compra"
-                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
-                    </button>
+                    <app-button variant="ghost" size="sm" (action)="editCompra(compra)" aria-label="Editar compra"
+                        [icon]="icons.edit">
+                    </app-button>
+                    <app-button variant="ghost" size="sm" (action)="deleteCompra(compra)" aria-label="Excluir compra"
+                        [icon]="icons.trash" class="text-red-500 hover:text-red-600 hover:bg-red-50">
+                    </app-button>
+
                 </div>
             </div>
 
@@ -156,27 +143,24 @@
                         <span>{{ formatDate(compra.dataCompra) }}</span>
                     </div>
                     <div class="flex gap-2 flex-wrap">
-                        <span
-                            class="text-[10px] px-2 py-1 bg-gray-100 rounded-md text-gray-600 font-bold uppercase border border-gray-200">
+                        <app-badge variant="neutral" class="text-[10px] font-bold uppercase">
                             {{ compra.categoria }}
-                        </span>
+                        </app-badge>
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-3">
                     <span class="font-bold text-gray-900 text-lg">{{ formatMoney(compra.valorTotal) }}</span>
                     <div class="flex gap-1">
-                        <button type="button" (click)="editCompra(compra)" aria-label="Editar"
-                            class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
-                            <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
-                        </button>
-                        <button type="button" (click)="deleteCompra(compra)" aria-label="Excluir"
-                            class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                            <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
-                        </button>
+                        <app-button variant="ghost" size="sm" (action)="editCompra(compra)" aria-label="Editar"
+                            [icon]="icons.edit">
+                        </app-button>
+                        <app-button variant="ghost" size="sm" (action)="deleteCompra(compra)" aria-label="Excluir"
+                            [icon]="icons.trash" class="text-red-500 hover:text-red-600 hover:bg-red-50">
+                        </app-button>
                     </div>
                 </div>
             </div>
-        </div>
+        </app-card>
 
         <!-- Empty State -->
         <app-empty-state *ngIf="filteredCompras.length === 0 && !isLoading" type="compra"

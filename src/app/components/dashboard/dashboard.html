@@ -8,21 +8,17 @@
         </div>
 
         <div class="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-1">
-            <button (click)="changeMonth(-1)"
-                class="p-2 hover:bg-gray-50 rounded-lg transition-colors text-gray-500 hover:text-primary"
-                aria-label="Mês anterior">
-                <lucide-icon [img]="icons.prev" class="w-5 h-5"></lucide-icon>
-            </button>
+            <app-button variant="ghost" size="sm" (action)="changeMonth(-1)" aria-label="Mês anterior"
+                [icon]="icons.prev">
+            </app-button>
 
             <span class="px-4 py-1 font-semibold text-gray-700 capitalize min-w-[140px] text-center">
                 {{ getMonthName((dateControl$ | async)!.mes) }} {{ (dateControl$ | async)!.ano }}
             </span>
 
-            <button (click)="changeMonth(1)"
-                class="p-2 hover:bg-gray-50 rounded-lg transition-colors text-gray-500 hover:text-primary"
-                aria-label="Próximo mês">
-                <lucide-icon [img]="icons.next" class="w-5 h-5"></lucide-icon>
-            </button>
+            <app-button variant="ghost" size="sm" (action)="changeMonth(1)" aria-label="Próximo mês"
+                [icon]="icons.next">
+            </app-button>
         </div>
     </div>
 
@@ -78,49 +74,51 @@
                         class="px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-green-100 text-sm font-medium flex items-center gap-1.5">
                         <lucide-icon [img]="icons.check" class="w-3 h-3"></lucide-icon> Fatura Paga
                     </span>
-                    <button *ngIf="!isFaturaPaga(data.parcelas) && data.parcelas.length > 0" (click)="pagarFatura()"
-                        class="px-4 py-2 bg-white text-primary-700 rounded-lg font-semibold text-sm hover:bg-gray-50 transition-colors shadow-lg shadow-black/10 flex items-center gap-2">
-                        <lucide-icon [img]="icons.check" class="w-4 h-4"></lucide-icon>
+                    <app-button *ngIf="!isFaturaPaga(data.parcelas) && data.parcelas.length > 0"
+                        (action)="pagarFatura()" variant="secondary" [icon]="icons.check">
                         Pagar Fatura
-                    </button>
+                    </app-button>
                 </div>
             </div>
         </div>
 
-        <!-- Secondary Stat: Limite -->
-        <div
-            class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-all">
-            <div class="relative z-10">
-                <div class="flex justify-between items-start mb-4">
-                    <p class="text-gray-500 font-medium text-sm">Limite Global Disponível</p>
-                    <div class="p-2 bg-green-50 rounded-lg text-green-600 group-hover:scale-110 transition-transform">
-                        <lucide-icon [img]="icons.wallet" class="w-5 h-5"></lucide-icon>
+        <app-card class="h-full relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="p-6 h-full flex flex-col justify-between">
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-4">
+                        <p class="text-gray-500 font-medium text-sm">Limite Global Disponível</p>
+                        <div
+                            class="p-2 bg-green-50 rounded-lg text-green-600 group-hover:scale-110 transition-transform">
+                            <lucide-icon [img]="icons.wallet" class="w-5 h-5"></lucide-icon>
+                        </div>
                     </div>
-                </div>
-                <h3 class="text-3xl font-bold text-gray-900">{{ formatMoney(getLimiteDisponivelGlobal(data.cartoes)) }}
-                </h3>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ formatMoney(getLimiteDisponivelGlobal(data.cartoes))
+                        }}
+                    </h3>
 
-                <div class="mt-4 w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div class="h-full bg-green-500 rounded-full"
-                        [style.width.%]="(getLimiteDisponivelGlobal(data.cartoes) / getLimiteTotalGlobal(data.cartoes)) * 100">
+                    <div class="mt-4 w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div class="h-full bg-green-500 rounded-full"
+                            [style.width.%]="(getLimiteDisponivelGlobal(data.cartoes) / getLimiteTotalGlobal(data.cartoes)) * 100">
+                        </div>
                     </div>
+                    <p class="text-xs text-gray-400 mt-2">De um total de {{
+                        formatMoney(getLimiteTotalGlobal(data.cartoes))
+                        }}</p>
                 </div>
-                <p class="text-xs text-gray-400 mt-2">De um total de {{ formatMoney(getLimiteTotalGlobal(data.cartoes))
-                    }}</p>
-            </div>
 
-            <div
-                class="absolute -bottom-6 -right-6 w-32 h-32 bg-green-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500">
+                <div
+                    class="absolute -bottom-6 -right-6 w-32 h-32 bg-green-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500">
+                </div>
             </div>
-        </div>
+        </app-card>
     </div>
 
     <!-- Cards List (Summary) -->
     <div>
         <h3 class="text-lg font-bold text-gray-900 mb-4 px-1">Resumo dos Cartões</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" *ngIf="data.cartoes.length > 0; else noCards">
-            <div *ngFor="let cartao of data.cartoes"
-                class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-primary/30 transition-all group">
+            <app-card *ngFor="let cartao of data.cartoes"
+                class="p-5 hover:shadow-md hover:border-primary/30 transition-all group">
                 <div class="flex justify-between items-start mb-3">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
@@ -143,7 +141,7 @@
                         [style.width.%]="(cartao.usado / cartao.limiteTotal) * 100"
                         [style.background-color]="cartao.cor"></div>
                 </div>
-            </div>
+            </app-card>
         </div>
 
         <ng-template #noCards>
@@ -155,7 +153,7 @@
     <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Distribution Chart -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm h-[420px] flex flex-col">
+        <app-card class="p-6 h-[420px] flex flex-col">
             <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <div class="w-1 h-6 bg-primary rounded-full"></div>
                 Distribuição por Cartão
@@ -166,10 +164,10 @@
                     [animations]="true" [tooltipDisabled]="false" [arcWidth]="0.25">
                 </ngx-charts-pie-chart>
             </div>
-        </div>
+        </app-card>
 
         <!-- History Chart -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm h-[420px] flex flex-col">
+        <app-card class="p-6 h-[420px] flex flex-col">
             <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <div class="w-1 h-6 bg-primary rounded-full"></div>
                 Histórico de Faturas
@@ -184,7 +182,7 @@
             <div *ngIf="!(historicoData$ | async)" class="flex-1 flex items-center justify-center">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-        </div>
+        </app-card>
     </div>
 
 </div>

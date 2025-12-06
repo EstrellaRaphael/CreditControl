@@ -76,7 +76,7 @@
     </div>
 
     <!-- Lista de Parcelas -->
-    <div *ngIf="!isLoading" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <app-card *ngIf="!isLoading">
 
         <!-- Header da tabela -->
         <div
@@ -138,31 +138,23 @@
 
                 <!-- Status -->
                 <div class="col-span-2 flex justify-center">
-                    <span *ngIf="parcela.status === 'PAGO'"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
-                        <lucide-icon [img]="icons.check" class="w-3.5 h-3.5"></lucide-icon>
+                    <app-badge *ngIf="parcela.status === 'PAGO'" variant="success" [icon]="icons.check">
                         Pago
-                    </span>
-                    <span *ngIf="parcela.status === 'PENDENTE'"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold border border-yellow-100">
+                    </app-badge>
+                    <app-badge *ngIf="parcela.status === 'PENDENTE'" variant="warning">
                         Pendente
-                    </span>
+                    </app-badge>
                 </div>
 
                 <!-- Ações -->
                 <div class="col-span-2 flex justify-center gap-2">
-                    <button type="button" *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
-                        class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold hover:bg-primary-700 transition-colors shadow-sm">
+                    <app-button *ngIf="parcela.status === 'PENDENTE'" size="sm" (action)="confirmarPagamento(parcela)">
                         Pagar
-                    </button>
+                    </app-button>
 
-                    <button type="button"
-                        *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
-                        (click)="confirmarCancelamento(parcela)"
-                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Cancelar assinatura">
-                        <lucide-icon [img]="icons.xCircle" class="w-4 h-4"></lucide-icon>
-                    </button>
+                    <app-button *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
+                        variant="danger" size="sm" [icon]="icons.xCircle" (action)="confirmarCancelamento(parcela)">
+                    </app-button>
                 </div>
             </div>
 
@@ -183,14 +175,10 @@
                     </div>
 
                     <div class="pt-1 flex items-center gap-2">
-                        <span *ngIf="parcela.status === 'PAGO'"
-                            class="inline-flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                            <lucide-icon [img]="icons.check" class="w-3 h-3"></lucide-icon> Pago
-                        </span>
-                        <span *ngIf="parcela.status === 'PENDENTE'"
-                            class="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">Pendente</span>
-                        <span *ngIf="parcela.compraStatus === 'cancelada'"
-                            class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Cancelada</span>
+                        <app-badge *ngIf="parcela.status === 'PAGO'" variant="success"
+                            [icon]="icons.check">Pago</app-badge>
+                        <app-badge *ngIf="parcela.status === 'PENDENTE'" variant="warning">Pendente</app-badge>
+                        <app-badge *ngIf="parcela.compraStatus === 'cancelada'" variant="danger">Cancelada</app-badge>
                     </div>
                 </div>
 
@@ -198,23 +186,22 @@
                     <div class="font-bold text-gray-900 text-lg">{{ formatMoney(parcela.valor) }}</div>
 
                     <div class="flex gap-2">
-                        <button *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
-                            class="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm hover:bg-primary-700 active:scale-95 transition-all">
+                        <app-button *ngIf="parcela.status === 'PENDENTE'" size="sm"
+                            (action)="confirmarPagamento(parcela)">
                             Pagar
-                        </button>
+                        </app-button>
 
-                        <button *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
-                            (click)="confirmarCancelamento(parcela)"
-                            class="p-1.5 bg-red-50 text-red-500 rounded-lg active:scale-95 transition-all">
-                            <lucide-icon [img]="icons.xCircle" class="w-5 h-5"></lucide-icon>
-                        </button>
+                        <app-button *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
+                            variant="danger" size="sm" [icon]="icons.xCircle" (action)="confirmarCancelamento(parcela)">
+                        </app-button>
                     </div>
                 </div>
             </div>
 
         </div>
-    </div>
+    </app-card>
 </div>
+
 
 <app-confirm-modal [isOpen]="isConfirmModalOpen" [title]="confirmModalConfig.title"
     [message]="confirmModalConfig.message" [type]="confirmModalConfig.type"

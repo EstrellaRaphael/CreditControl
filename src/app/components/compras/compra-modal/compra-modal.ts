@@ -8,11 +8,14 @@ import { CompraService } from '../../../services/compra';
 import { CartaoService } from '../../../services/cartao';
 import { CategoriaService } from '../../../services/categoria';
 import { ToastrService } from 'ngx-toastr';
+import { InputComponent } from '../../ui/input/input.component';
+import { SelectComponent } from '../../ui/select/select.component';
+import { ButtonComponent } from '../../ui/button/button.component';
 
 @Component({
   selector: 'app-compra-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputComponent, SelectComponent, ButtonComponent],
   templateUrl: './compra-modal.html'
 })
 export class CompraModalComponent implements OnInit, OnChanges {
@@ -32,10 +35,14 @@ export class CompraModalComponent implements OnInit, OnChanges {
 
   // Lista de cartões para o Select
   cartoes$: Observable<Cartao[]> = this.cartaoService.getCartoes();
-  cartoesList: Cartao[] = []; // Para busca local ao salvar
+  cartoesList: Cartao[] = [];
+  cartaoOptions: any[] = [];
 
   // Categorias dinâmicas
   categorias$: Observable<Categoria[]> = this.categoriaService.getCategorias();
+  categoriaOptions: any[] = [];
+
+  parcelaOptions = Array.from({ length: 23 }, (_, i) => ({ label: `${i + 2}x`, value: i + 2 }));
 
   form: FormGroup = this.fb.group({
     descricao: ['', [Validators.required, Validators.minLength(3)]],
@@ -48,8 +55,15 @@ export class CompraModalComponent implements OnInit, OnChanges {
   });
 
   ngOnInit() {
-    // Carrega a lista de cartões para memória (para pegar o objeto Cartao completo depois)
-    this.cartoes$.subscribe(c => this.cartoesList = c);
+    // Carrega a lista de cartões
+    this.cartoes$.subscribe(c => {
+      this.cartoesList = c;
+      this.cartaoOptions = c.map(card => ({ label: card.nome, value: card.id }));
+    });
+
+    this.categorias$.subscribe(c => {
+      this.categoriaOptions = c.map(cat => ({ label: cat.nome, value: cat.nome }));
+    });
 
     // Monitora mudança no Tipo de Pagamento para validar Parcelas
     this.form.get('tipo')?.valueChanges.subscribe(tipo => {

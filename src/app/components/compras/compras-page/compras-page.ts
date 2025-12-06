@@ -10,13 +10,18 @@ import { CompraModalComponent } from '../compra-modal/compra-modal';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { BadgeComponent } from '../../ui/badge/badge.component';
+import { ButtonComponent } from '../../ui/button/button.component';
+import { CardComponent } from '../../ui/card/card.component';
+import { InputComponent } from '../../ui/input/input.component';
+import { SelectComponent } from '../../ui/select/select.component';
 import { ToastrService } from 'ngx-toastr';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-compras-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CompraModalComponent, ConfirmModalComponent, ReactiveFormsModule, SkeletonComponent, EmptyStateComponent],
+  imports: [CommonModule, LucideAngularModule, CompraModalComponent, ConfirmModalComponent, ReactiveFormsModule, SkeletonComponent, EmptyStateComponent, BadgeComponent, ButtonComponent, CardComponent, InputComponent, SelectComponent],
   templateUrl: './compras-page.html'
 })
 export class ComprasPageComponent implements OnInit, OnDestroy {
@@ -28,6 +33,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
 
   compras: Compra[] = [];
   categorias: Categoria[] = [];
+  categoryOptions: any[] = [];
   private subscriptions: Subscription[] = [];
 
   searchControl = new FormControl('');
@@ -81,6 +87,8 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
 
     const catSub = this.categoriaService.getCategorias().subscribe(data => {
       this.categorias = data;
+      this.categoryOptions = data.map(c => ({ label: c.nome, value: c.nome }));
+      this.categoryOptions.unshift({ label: 'Todas', value: '' });
       this.cdr.detectChanges();
     });
     this.subscriptions.push(catSub);

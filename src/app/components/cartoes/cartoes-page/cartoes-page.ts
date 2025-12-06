@@ -10,11 +10,12 @@ import { ToastrService } from 'ngx-toastr';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { ButtonComponent } from '../../ui/button/button.component';
 
 @Component({
   selector: 'app-cartoes-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CartaoModalComponent, ConfirmModalComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [CommonModule, LucideAngularModule, CartaoModalComponent, ConfirmModalComponent, SkeletonComponent, EmptyStateComponent, ButtonComponent],
   templateUrl: './cartoes-page.html'
 })
 export class CartoesPage implements OnInit {

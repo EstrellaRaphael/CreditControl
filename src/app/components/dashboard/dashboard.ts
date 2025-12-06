@@ -8,6 +8,8 @@ import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieC
 import { ConfirmModalComponent } from '../shared/confirm-modal/confirm-modal.component';
 import { SkeletonComponent } from '../shared/skeleton/skeleton.component';
 import { WelcomeBannerComponent } from '../shared/welcome-banner/welcome-banner.component';
+import { CardComponent } from '../ui/card/card.component';
+import { ButtonComponent } from '../ui/button/button.component';
 import { DashboardService } from '../../services/dashboard';
 import { Cartao, Parcela } from '../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
@@ -15,7 +17,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, NgxChartsModule, ConfirmModalComponent, SkeletonComponent, WelcomeBannerComponent],
+  imports: [CommonModule, LucideAngularModule, NgxChartsModule, ConfirmModalComponent, SkeletonComponent, WelcomeBannerComponent, CardComponent, ButtonComponent],
   templateUrl: './dashboard.html'
 })
 export class DashboardComponent implements OnInit {
