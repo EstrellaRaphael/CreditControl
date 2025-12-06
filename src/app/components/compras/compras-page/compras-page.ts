@@ -1,8 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Compra, Categoria } from '../../../models/core.types';
-import { Observable, combineLatest } from 'rxjs';
-import { map, startWith, switchMap } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { LucideAngularModule, Plus, ShoppingBag, Calendar, CreditCard, Trash2, Search, Filter, X, Edit } from 'lucide-angular';
 import { CompraService } from '../../../services/compra';
 import { CategoriaService } from '../../../services/categoria';
@@ -17,12 +16,16 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
   imports: [CommonModule, LucideAngularModule, CompraModalComponent, ConfirmModalComponent, ReactiveFormsModule],
   templateUrl: './compras-page.html'
 })
-export class ComprasPageComponent {
+export class ComprasPageComponent implements OnInit, OnDestroy {
   private compraService = inject(CompraService);
   private categoriaService = inject(CategoriaService);
   private toastr = inject(ToastrService);
+  private cdr = inject(ChangeDetectorRef);
 
-  // Controles de Filtro (Definidos primeiro para evitar erro de inicialização)
+  compras: Compra[] = [];
+  categorias: Categoria[] = [];
+  private subscriptions: Subscription[] = [];
+
   searchControl = new FormControl('');
   categoryControl = new FormControl('');
   startDateControl = new FormControl('');
@@ -30,56 +33,11 @@ export class ComprasPageComponent {
   minPriceControl = new FormControl('');
   maxPriceControl = new FormControl('');
 
-  // Dados filtrados no servidor (Data)
-  // Combina os controles de data para disparar a busca no servidor
-  private dateFilter$ = combineLatest([
-    this.startDateControl.valueChanges.pipe(startWith('')),
-    this.endDateControl.valueChanges.pipe(startWith(''))
-  ]);
-
-  // Stream principal de dados que vem do servidor
-  private comprasServer$ = this.dateFilter$.pipe(
-    switchMap(([start, end]) => this.compraService.getCompras(start || undefined, end || undefined))
-  );
-
-  categorias$ = this.categoriaService.getCategorias();
-
-  // Filtros combinados (Cliente)
-  // Aplica os demais filtros (texto, categoria, preço) nos dados retornados pelo servidor
-  filteredCompras$: Observable<Compra[]> = combineLatest([
-    this.comprasServer$,
-    this.searchControl.valueChanges.pipe(startWith('')),
-    this.categoryControl.valueChanges.pipe(startWith('')),
-    this.minPriceControl.valueChanges.pipe(startWith('')),
-    this.maxPriceControl.valueChanges.pipe(startWith(''))
-  ]).pipe(
-    map(([compras, search, category, minPrice, maxPrice]) => {
-      return compras.filter(compra => {
-        // Filtro de Texto (Nome)
-        const matchesSearch = !search || compra.descricao.toLowerCase().includes(search.toLowerCase());
-
-        // Filtro de Categoria
-        const matchesCategory = !category || compra.categoria === category;
-
-        // Filtro de Preço
-        let matchesPrice = true;
-        if (minPrice) {
-          matchesPrice = matchesPrice && compra.valorTotal >= Number(minPrice);
-        }
-        if (maxPrice) {
-          matchesPrice = matchesPrice && compra.valorTotal <= Number(maxPrice);
-        }
-
-        return matchesSearch && matchesCategory && matchesPrice;
-      });
-    })
-  );
-
   isModalOpen = false;
-  editingCompra: Compra | null = null; // Compra sendo editada
-  showFilters = false; // Toggle para mobile/desktop se quiser esconder
+  editingCompra: Compra | null = null;
+  showFilters = false;
+  isLoading = true;
 
-  // Controle do Modal de Confirmação
   isConfirmModalOpen = false;
   confirmModalConfig = {
     title: '',
@@ -101,8 +59,48 @@ export class ComprasPageComponent {
     edit: Edit
   };
 
+  ngOnInit() {
+    const comprasSub = this.compraService.getCompras().subscribe(data => {
+      this.compras = data;
+      this.isLoading = false;
+      this.cdr.detectChanges();
+    });
+    this.subscriptions.push(comprasSub);
+
+    const catSub = this.categoriaService.getCategorias().subscribe(data => {
+      this.categorias = data;
+      this.cdr.detectChanges();
+    });
+    this.subscriptions.push(catSub);
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(s => s.unsubscribe());
+  }
+
+  get filteredCompras(): Compra[] {
+    const search = this.searchControl.value?.toLowerCase() || '';
+    const category = this.categoryControl.value || '';
+    const startDate = this.startDateControl.value || '';
+    const endDate = this.endDateControl.value || '';
+    const minPrice = this.minPriceControl.value ? Number(this.minPriceControl.value) : null;
+    const maxPrice = this.maxPriceControl.value ? Number(this.maxPriceControl.value) : null;
+
+    return this.compras.filter(compra => {
+      const matchesSearch = !search || compra.descricao.toLowerCase().includes(search);
+      const matchesCategory = !category || compra.categoria === category;
+      let matchesDate = true;
+      if (startDate) matchesDate = matchesDate && compra.dataCompra >= startDate;
+      if (endDate) matchesDate = matchesDate && compra.dataCompra <= endDate;
+      let matchesPrice = true;
+      if (minPrice !== null) matchesPrice = matchesPrice && compra.valorTotal >= minPrice;
+      if (maxPrice !== null) matchesPrice = matchesPrice && compra.valorTotal <= maxPrice;
+      return matchesSearch && matchesCategory && matchesDate && matchesPrice;
+    });
+  }
+
   openNewCompraModal() {
-    this.editingCompra = null; // Garante que é nova compra
+    this.editingCompra = null;
     this.isModalOpen = true;
   }
 
@@ -129,12 +127,10 @@ export class ComprasPageComponent {
     this.maxPriceControl.setValue('');
   }
 
-  // Helper para formatar moeda
   formatMoney(valor: number): string {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   }
 
-  // Helper para formatar data (YYYY-MM-DD -> DD/MM/YYYY)
   formatDate(dateStr: string): string {
     if (!dateStr) return '';
     const [year, month, day] = dateStr.split('-');
@@ -150,6 +146,7 @@ export class ComprasPageComponent {
       action: () => this.processarExclusao(compra)
     };
     this.isConfirmModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   async processarExclusao(compra: Compra) {
@@ -160,5 +157,10 @@ export class ComprasPageComponent {
     } catch (error) {
       this.toastr.error('Erro ao excluir compra.');
     }
+  }
+
+  closeConfirmModal() {
+    this.isConfirmModalOpen = false;
+    this.cdr.detectChanges();
   }
 }

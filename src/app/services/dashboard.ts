@@ -150,6 +150,34 @@ export class DashboardService {
     await batch.commit();
     return snapshot.size; // Retorna quantas parcelas foram pagas
   }
+
+  // NOVO: Pagar uma parcela individual
+  async pagarParcelaIndividual(parcela: Parcela) {
+    const user = this.authService.getCurrentUser();
+    if (!user || !parcela.id) throw new Error('Dados inválidos');
+
+    const batch = writeBatch(this.firestore);
+
+    // 1. Marca a parcela como PAGO
+    const parcelaRef = doc(this.firestore, `users/${user.uid}/parcelas/${parcela.id}`);
+    batch.update(parcelaRef, { status: 'PAGO' });
+
+    // 2. Restaura o limite do cartão
+    const cartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${parcela.cartaoId}`);
+    batch.update(cartaoRef, {
+      usado: increment(-parcela.valor)
+    });
+
+    // 3. Incrementa o contador na Compra Pai
+    if (parcela.compraId) {
+      const compraRef = doc(this.firestore, `users/${user.uid}/compras/${parcela.compraId}`);
+      batch.update(compraRef, {
+        parcelasPagas: increment(1)
+      });
+    }
+
+    return batch.commit();
+  }
 }
 
 

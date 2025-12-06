@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { LucideAngularModule, Trash2, Plus, Tag, Edit, X } from 'lucide-angular';
@@ -20,6 +20,7 @@ export class CategoriasPageComponent {
     private categoriaService = inject(CategoriaService);
     private compraService = inject(CompraService);
     private toastr = inject(ToastrService);
+    private cdr = inject(ChangeDetectorRef);
 
     categorias$: Observable<Categoria[]> = this.categoriaService.getCategorias();
 
@@ -27,7 +28,6 @@ export class CategoriasPageComponent {
 
     editingCategoria: Categoria | null = null;
 
-    // Controle do Modal de Confirmação
     isConfirmModalOpen = false;
     confirmModalConfig = {
         title: '',
@@ -38,62 +38,47 @@ export class CategoriasPageComponent {
     };
 
     form: FormGroup = this.fb.group({
-        nome: ['', [Validators.required, Validators.minLength(2)]],
-        cor: ['#3b82f6'] // Default blue
+        nome: ['', Validators.required],
+        cor: ['#6366f1']
     });
 
-    // Paleta de cores pré-definidas (Tailwind colors)
-    readonly presetColors = [
-        '#ef4444', // red-500
-        '#f97316', // orange-500
-        '#f59e0b', // amber-500
-        '#84cc16', // lime-500
-        '#22c55e', // green-500
-        '#10b981', // emerald-500
-        '#06b6d4', // cyan-500
-        '#3b82f6', // blue-500
-        '#6366f1', // indigo-500
-        '#8b5cf6', // violet-500
-        '#d946ef', // fuchsia-500
-        '#ec4899', // pink-500
-        '#64748b', // slate-500
+    presetColors = [
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+        '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+        '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'
     ];
 
     selectColor(color: string) {
         this.form.patchValue({ cor: color });
     }
 
-    async onSubmit() {
-        if (this.form.invalid) return;
-
-        try {
-            if (this.editingCategoria && this.editingCategoria.id) {
-                await this.categoriaService.updateCategoria(this.editingCategoria.id, this.form.value);
-                this.toastr.success('Categoria atualizada!', 'Sucesso');
-                this.cancelEdit();
-            } else {
-                await this.categoriaService.addCategoria(this.form.value);
-                this.toastr.success('Categoria adicionada!', 'Sucesso');
-                this.form.reset({ nome: '', cor: '#3b82f6' });
-            }
-        } catch (error) {
-            console.error(error);
-            this.toastr.error('Erro ao salvar categoria.', 'Erro');
-        }
-    }
-
-    editCategoria(categoria: Categoria) {
-        this.editingCategoria = categoria;
-        this.form.patchValue({
-            nome: categoria.nome,
-            cor: categoria.cor || '#3b82f6'
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    editCategoria(cat: Categoria) {
+        this.editingCategoria = cat;
+        this.form.patchValue({ nome: cat.nome, cor: cat.cor });
     }
 
     cancelEdit() {
         this.editingCategoria = null;
-        this.form.reset({ nome: '', cor: '#3b82f6' });
+        this.form.reset({ nome: '', cor: '#6366f1' });
+    }
+
+    async onSubmit() {
+        if (this.form.invalid) return;
+
+        const data = this.form.value;
+        try {
+            if (this.editingCategoria?.id) {
+                await this.categoriaService.updateCategoria(this.editingCategoria.id, data);
+                this.toastr.success('Categoria atualizada.', 'Feito');
+            } else {
+                await this.categoriaService.addCategoria(data);
+                this.toastr.success('Categoria criada.', 'Feito');
+            }
+            this.cancelEdit();
+        } catch (error) {
+            console.error(error);
+            this.toastr.error('Erro ao salvar categoria.', 'Erro');
+        }
     }
 
     async deleteCategoria(categoria: Categoria) {
@@ -113,6 +98,7 @@ export class CategoriasPageComponent {
             action: () => this.processarExclusao(categoria.id!)
         };
         this.isConfirmModalOpen = true;
+        this.cdr.detectChanges();
     }
 
     async processarExclusao(id: string) {
@@ -124,5 +110,10 @@ export class CategoriasPageComponent {
             console.error(error);
             this.toastr.error('Erro ao remover categoria.', 'Erro');
         }
+    }
+
+    closeConfirmModal() {
+        this.isConfirmModalOpen = false;
+        this.cdr.detectChanges();
     }
 }

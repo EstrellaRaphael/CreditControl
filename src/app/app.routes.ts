@@ -36,6 +36,8 @@ export const routes: Routes = [
 
             { path: 'categorias', loadComponent: () => import('./components/categorias/categorias-page/categorias-page').then(m => m.CategoriasPageComponent) },
 
+            { path: 'parcelas', loadComponent: () => import('./components/parcelas/parcelas-page/parcelas-page').then(m => m.ParcelasPageComponent) },
+
             { path: 'about', loadComponent: () => import('./components/about/about-page/about-page').then(m => m.AboutPageComponent) },
 
             { path: 'help', loadComponent: () => import('./components/help/help-page/help-page').then(m => m.HelpPageComponent) },

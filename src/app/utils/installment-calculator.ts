@@ -54,7 +54,10 @@ export class InstallmentCalculator {
                 mesReferencia,
                 anoReferencia,
                 status: 'PENDENTE',
-                dataVencimento: dataVenc.toISOString().split('T')[0]
+                dataVencimento: dataVenc.toISOString().split('T')[0],
+                // Denormalizado para exibição
+                compraDescricao: compra.descricao,
+                cartaoNome: cartao.nome
             });
 
             // Avança para o próximo mês

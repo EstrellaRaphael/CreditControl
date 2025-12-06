@@ -1,0 +1,102 @@
+<div class="space-y-6 animate-in fade-in duration-500">
+
+    <!-- Header com navegação de mês -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Parcelas</h1>
+            <p class="text-gray-500">Gerencie suas parcelas mensais</p>
+        </div>
+
+        <div class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
+            <button type="button" (click)="mesAnterior()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <lucide-icon [img]="icons.chevronLeft" class="w-5 h-5 text-gray-600"></lucide-icon>
+            </button>
+            <span class="px-4 py-2 font-bold text-gray-900 min-w-[160px] text-center capitalize">
+                {{ getNomeMes(mesAtual$.value) }} {{ anoAtual$.value }}
+            </span>
+            <button type="button" (click)="proximoMes()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <lucide-icon [img]="icons.chevronRight" class="w-5 h-5 text-gray-600"></lucide-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="py-16 text-center">
+        <div class="animate-pulse text-gray-500">Carregando...</div>
+    </div>
+
+    <!-- Lista de Parcelas -->
+    <div *ngIf="!isLoading" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+        <!-- Header da tabela -->
+        <div
+            class="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+            <div class="col-span-4">Compra</div>
+            <div class="col-span-3">Cartão</div>
+            <div class="col-span-2">Valor</div>
+            <div class="col-span-3 text-center">Status</div>
+        </div>
+
+        <!-- Sem parcelas -->
+        <div *ngIf="parcelas.length === 0" class="py-16 text-center">
+            <div
+                class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                <lucide-icon [img]="icons.calendar" class="w-10 h-10 text-gray-300"></lucide-icon>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">Nenhuma parcela</h3>
+            <p class="text-gray-500 mt-1">Não há parcelas para este mês.</p>
+        </div>
+
+        <!-- Lista -->
+        <div *ngFor="let parcela of parcelas"
+            class="group grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center">
+
+            <!-- Compra -->
+            <div class="md:col-span-4">
+                <div class="font-bold text-gray-900">{{ parcela.nomeCompra }}</div>
+                <div class="text-sm text-gray-500 flex items-center gap-2 mt-0.5">
+                    <!-- For recurrent purchases -->
+                    <span *ngIf="parcela.tipoCompra === 'recorrente'"
+                        class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium border border-blue-100">
+                        Assinatura
+                    </span>
+                    <!-- For installment purchases -->
+                    <span *ngIf="parcela.tipoCompra !== 'recorrente'"
+                        class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium border border-gray-200">
+                        {{ parcela.numeroParcela }}/{{ parcela.totalParcelas }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Cartão -->
+            <div class="md:col-span-3 flex items-center gap-2">
+                <lucide-icon [img]="icons.card" class="w-4 h-4 text-gray-400"></lucide-icon>
+                <span class="text-sm text-gray-600 truncate">{{ parcela.nomeCartao }}</span>
+            </div>
+
+            <!-- Valor -->
+            <div class="md:col-span-2">
+                <span class="font-bold text-gray-900">{{ formatMoney(parcela.valor) }}</span>
+            </div>
+
+            <!-- Status / Ação -->
+            <div class="md:col-span-3 flex justify-center">
+                <span *ngIf="parcela.status === 'PAGO'"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
+                    <lucide-icon [img]="icons.check" class="w-3.5 h-3.5"></lucide-icon>
+                    Pago
+                </span>
+                <button type="button" *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
+                    class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold hover:bg-primary-700 transition-colors shadow-sm">
+                    Pagar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<app-confirm-modal [isOpen]="isConfirmModalOpen" [title]="confirmModalConfig.title"
+    [message]="confirmModalConfig.message" [type]="confirmModalConfig.type"
+    [confirmText]="confirmModalConfig.confirmText" (confirm)="confirmModalConfig.action()"
+    (cancel)="closeConfirmModal()">
+</app-confirm-modal>
