@@ -1,10 +1,11 @@
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Calendar, CreditCard, Check, ChevronLeft, ChevronRight } from 'lucide-angular';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
+import { LucideAngularModule, Calendar, CreditCard, Check, ChevronLeft, ChevronRight, Filter, X, XCircle } from 'lucide-angular';
 import { DashboardService } from '../../../services/dashboard';
 import { CompraService } from '../../../services/compra';
 import { CartaoService } from '../../../services/cartao';
-import { BehaviorSubject, Subscription, switchMap, forkJoin, of, combineLatest, tap } from 'rxjs';
+import { BehaviorSubject, Subscription, switchMap, combineLatest, tap } from 'rxjs';
 import { Parcela, Compra, Cartao } from '../../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
@@ -15,12 +16,13 @@ interface ParcelaEnriquecida extends Parcela {
     nomeCartao: string;
     totalParcelas: number;
     tipoCompra: 'avista' | 'parcelado' | 'recorrente';
+    compraStatus?: 'ativa' | 'cancelada';
 }
 
 @Component({
     selector: 'app-parcelas-page',
     standalone: true,
-    imports: [CommonModule, LucideAngularModule, ConfirmModalComponent],
+    imports: [CommonModule, LucideAngularModule, ConfirmModalComponent, ReactiveFormsModule],
     templateUrl: './parcelas-page.html'
 })
 export class ParcelasPageComponent implements OnInit, OnDestroy {
@@ -37,7 +39,10 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
         card: CreditCard,
         check: Check,
         chevronLeft: ChevronLeft,
-        chevronRight: ChevronRight
+        chevronRight: ChevronRight,
+        filter: Filter,
+        x: X,
+        xCircle: XCircle
     };
 
     // Navegação de mês
@@ -51,7 +56,14 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
 
     // Lista de parcelas enriquecidas
     parcelas: ParcelaEnriquecida[] = [];
+    cartoes: Cartao[] = [];
     isLoading = true;
+    showFilters = false;
+
+    // Filtros
+    filtroCartao = new FormControl('');
+    filtroStatus = new FormControl('');
+    filtroTipo = new FormControl('');
 
     // Controle do Modal de Confirmação
     isConfirmModalOpen = false;
@@ -80,6 +92,7 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
                 cartoes.forEach(c => {
                     if (c.id) this.cartoesMap.set(c.id, c);
                 });
+                this.cartoes = cartoes;
             }),
             switchMap(() => combineLatest([this.mesAtual$, this.anoAtual$])),
             switchMap(([mes, ano]) => {
@@ -94,7 +107,8 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
                     nomeCompra: p.compraDescricao || compra?.descricao || 'Compra',
                     nomeCartao: p.cartaoNome || this.cartoesMap.get(p.cartaoId)?.nome || 'Cartão',
                     totalParcelas: compra?.qtdParcelas || 1,
-                    tipoCompra: compra?.tipo || 'parcelado'
+                    tipoCompra: compra?.tipo || 'parcelado',
+                    compraStatus: compra?.status
                 };
             });
             this.isLoading = false;
@@ -105,6 +119,42 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
 
     ngOnDestroy() {
         this.subscriptions.forEach(s => s.unsubscribe());
+    }
+
+    // Getter para parcelas filtradas
+    get filteredParcelas(): ParcelaEnriquecida[] {
+        const cartaoId = this.filtroCartao.value || '';
+        const status = this.filtroStatus.value || '';
+        const tipo = this.filtroTipo.value || '';
+
+        return this.parcelas.filter(p => {
+            // Filtro por cartão
+            if (cartaoId && p.cartaoId !== cartaoId) return false;
+
+            // Filtro por status
+            if (status === 'PAGO' && p.status !== 'PAGO') return false;
+            if (status === 'PENDENTE' && p.status !== 'PENDENTE') return false;
+
+            // Filtro por tipo
+            if (tipo === 'recorrente' && p.tipoCompra !== 'recorrente') return false;
+            if (tipo === 'parcelado' && p.tipoCompra !== 'parcelado' && p.tipoCompra !== 'avista') return false;
+
+            return true;
+        });
+    }
+
+    toggleFilters() {
+        this.showFilters = !this.showFilters;
+    }
+
+    clearFilters() {
+        this.filtroCartao.setValue('');
+        this.filtroStatus.setValue('');
+        this.filtroTipo.setValue('');
+    }
+
+    hasActiveFilters(): boolean {
+        return !!(this.filtroCartao.value || this.filtroStatus.value || this.filtroTipo.value);
     }
 
     // Helper para nome do mês
@@ -153,6 +203,22 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
             action: () => this.processarPagamento(parcela)
         };
         this.isConfirmModalOpen = true;
+        this.cdr.detectChanges();
+    }
+
+    // Abre modal para confirmar cancelamento de assinatura
+    confirmarCancelamento(parcela: ParcelaEnriquecida) {
+        if (!parcela.compraId) return;
+
+        this.confirmModalConfig = {
+            title: 'Cancelar Assinatura',
+            message: `Tem certeza que deseja cancelar a assinatura "${parcela.nomeCompra}"? As parcelas futuras serão removidas.`,
+            type: 'danger',
+            confirmText: 'Cancelar Assinatura',
+            action: () => this.processarCancelamento(parcela)
+        };
+        this.isConfirmModalOpen = true;
+        this.cdr.detectChanges();
     }
 
     closeConfirmModal() {
@@ -170,6 +236,19 @@ export class ParcelasPageComponent implements OnInit, OnDestroy {
         } catch (error) {
             console.error(error);
             this.toastr.error('Erro ao pagar parcela.', 'Erro');
+        }
+    }
+
+    async processarCancelamento(parcela: ParcelaEnriquecida) {
+        this.isConfirmModalOpen = false;
+        if (!parcela.compraId) return;
+
+        try {
+            await this.compraService.cancelarAssinatura(parcela.compraId);
+            this.toastr.success('Assinatura cancelada com sucesso!', 'Feito');
+        } catch (error) {
+            console.error(error);
+            this.toastr.error('Erro ao cancelar assinatura.', 'Erro');
         }
     }
 }

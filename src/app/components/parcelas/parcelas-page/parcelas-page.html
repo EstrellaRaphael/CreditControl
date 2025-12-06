@@ -20,6 +20,50 @@
         </div>
     </div>
 
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+        <div class="flex flex-col md:flex-row gap-4 items-end">
+            <!-- Filtro Cartão -->
+            <div class="flex-1">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Cartão</label>
+                <select [formControl]="filtroCartao"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none bg-white text-sm">
+                    <option value="">Todos os cartões</option>
+                    <option *ngFor="let cartao of cartoes" [value]="cartao.id">{{ cartao.nome }}</option>
+                </select>
+            </div>
+
+            <!-- Filtro Status -->
+            <div class="flex-1">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Status</label>
+                <select [formControl]="filtroStatus"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none bg-white text-sm">
+                    <option value="">Todos</option>
+                    <option value="PAGO">Pago</option>
+                    <option value="PENDENTE">Pendente</option>
+                </select>
+            </div>
+
+            <!-- Filtro Tipo -->
+            <div class="flex-1">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Tipo</label>
+                <select [formControl]="filtroTipo"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary outline-none bg-white text-sm">
+                    <option value="">Todos</option>
+                    <option value="parcelado">Parcelado</option>
+                    <option value="recorrente">Assinatura</option>
+                </select>
+            </div>
+
+            <!-- Limpar Filtros -->
+            <button *ngIf="hasActiveFilters()" type="button" (click)="clearFilters()"
+                class="px-4 py-2.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-medium border border-gray-200">
+                <lucide-icon [img]="icons.x" class="w-4 h-4"></lucide-icon>
+                Limpar
+            </button>
+        </div>
+    </div>
+
     <!-- Loading -->
     <div *ngIf="isLoading" class="py-16 text-center">
         <div class="animate-pulse text-gray-500">Carregando...</div>
@@ -32,28 +76,40 @@
         <div
             class="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
             <div class="col-span-4">Compra</div>
-            <div class="col-span-3">Cartão</div>
+            <div class="col-span-2">Cartão</div>
             <div class="col-span-2">Valor</div>
-            <div class="col-span-3 text-center">Status</div>
+            <div class="col-span-2 text-center">Status</div>
+            <div class="col-span-2 text-center">Ação</div>
         </div>
 
         <!-- Sem parcelas -->
-        <div *ngIf="parcelas.length === 0" class="py-16 text-center">
+        <div *ngIf="filteredParcelas.length === 0" class="py-16 text-center">
             <div
                 class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
                 <lucide-icon [img]="icons.calendar" class="w-10 h-10 text-gray-300"></lucide-icon>
             </div>
             <h3 class="text-lg font-bold text-gray-900">Nenhuma parcela</h3>
-            <p class="text-gray-500 mt-1">Não há parcelas para este mês.</p>
+            <p class="text-gray-500 mt-1">Não há parcelas para este mês{{ hasActiveFilters() ? ' com os filtros
+                aplicados' : '' }}.</p>
+            <button *ngIf="hasActiveFilters()" type="button" (click)="clearFilters()"
+                class="mt-4 text-primary font-bold hover:underline">
+                Limpar filtros
+            </button>
         </div>
 
         <!-- Lista -->
-        <div *ngFor="let parcela of parcelas"
+        <div *ngFor="let parcela of filteredParcelas"
             class="group grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center">
 
             <!-- Compra -->
             <div class="md:col-span-4">
-                <div class="font-bold text-gray-900">{{ parcela.nomeCompra }}</div>
+                <div class="font-bold text-gray-900 flex items-center gap-2">
+                    {{ parcela.nomeCompra }}
+                    <span *ngIf="parcela.compraStatus === 'cancelada'"
+                        class="px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100">
+                        Cancelada
+                    </span>
+                </div>
                 <div class="text-sm text-gray-500 flex items-center gap-2 mt-0.5">
                     <!-- For recurrent purchases -->
                     <span *ngIf="parcela.tipoCompra === 'recorrente'"
@@ -69,7 +125,7 @@
             </div>
 
             <!-- Cartão -->
-            <div class="md:col-span-3 flex items-center gap-2">
+            <div class="md:col-span-2 flex items-center gap-2">
                 <lucide-icon [img]="icons.card" class="w-4 h-4 text-gray-400"></lucide-icon>
                 <span class="text-sm text-gray-600 truncate">{{ parcela.nomeCartao }}</span>
             </div>
@@ -79,16 +135,34 @@
                 <span class="font-bold text-gray-900">{{ formatMoney(parcela.valor) }}</span>
             </div>
 
-            <!-- Status / Ação -->
-            <div class="md:col-span-3 flex justify-center">
+            <!-- Status -->
+            <div class="md:col-span-2 flex justify-center">
                 <span *ngIf="parcela.status === 'PAGO'"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
                     <lucide-icon [img]="icons.check" class="w-3.5 h-3.5"></lucide-icon>
                     Pago
                 </span>
+                <span *ngIf="parcela.status === 'PENDENTE'"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold border border-yellow-100">
+                    Pendente
+                </span>
+            </div>
+
+            <!-- Ações -->
+            <div class="md:col-span-2 flex justify-center gap-2">
+                <!-- Botão Pagar -->
                 <button type="button" *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
                     class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold hover:bg-primary-700 transition-colors shadow-sm">
                     Pagar
+                </button>
+
+                <!-- Botão Cancelar Assinatura (só para recorrentes ativas) -->
+                <button type="button"
+                    *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
+                    (click)="confirmarCancelamento(parcela)"
+                    class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Cancelar assinatura">
+                    <lucide-icon [img]="icons.xCircle" class="w-4 h-4"></lucide-icon>
                 </button>
             </div>
         </div>

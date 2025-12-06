@@ -23,6 +23,8 @@ export interface Compra {
     cartaoNome?: string;
     cartaoCor?: string;
     parcelasPagas?: number;
+    status?: 'ativa' | 'cancelada';
+    dataCancelamento?: string;
 }
 
 export interface Parcela {

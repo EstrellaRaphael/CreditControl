@@ -235,4 +235,57 @@ export class CompraService {
 
     return !snapshot.empty;
   }
+
+  // Cancela uma assinatura recorrente e remove parcelas futuras
+  async cancelarAssinatura(compraId: string): Promise<void> {
+    const user = await firstValueFrom(this.authService.user$);
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const batch = writeBatch(this.firestore);
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth() + 1;
+    const anoAtual = hoje.getFullYear();
+
+    // 1. Atualiza a compra com status cancelada
+    const compraRef = doc(this.firestore, `users/${user.uid}/compras/${compraId}`);
+    batch.update(compraRef, {
+      status: 'cancelada',
+      dataCancelamento: hoje.toISOString()
+    });
+
+    // 2. Remove parcelas futuras (após o mês atual)
+    const parcelasRef = collection(this.firestore, `users/${user.uid}/parcelas`);
+    const q = query(parcelasRef, where('compraId', '==', compraId));
+    const parcelasSnapshot = await getDocs(q);
+
+    let parcelasRemovidas = 0;
+    parcelasSnapshot.forEach((docSnapshot) => {
+      const parcela = docSnapshot.data() as any;
+      // Remove se for futuro (após o mês atual)
+      const isFutura = parcela.anoReferencia > anoAtual ||
+        (parcela.anoReferencia === anoAtual && parcela.mesReferencia > mesAtual);
+
+      if (isFutura && parcela.status === 'PENDENTE') {
+        batch.delete(docSnapshot.ref);
+        parcelasRemovidas++;
+      }
+    });
+
+    // 3. Estorna valor das parcelas removidas do cartão
+    if (parcelasRemovidas > 0) {
+      const compraSnap = await getDoc(compraRef);
+      if (compraSnap.exists()) {
+        const compra = compraSnap.data() as Compra;
+        const valorParcela = compra.valorTotal;
+        const valorEstorno = valorParcela * parcelasRemovidas;
+
+        const cartaoRef = doc(this.firestore, `users/${user.uid}/cartoes/${compra.cartaoId}`);
+        batch.update(cartaoRef, {
+          usado: increment(-valorEstorno)
+        });
+      }
+    }
+
+    return batch.commit();
+  }
 }
