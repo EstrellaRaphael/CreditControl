@@ -9,13 +9,14 @@ import { CartaoService } from '../../../services/cartao';
 import { CategoriaService } from '../../../services/categoria';
 import { ToastrService } from 'ngx-toastr';
 import { InputComponent } from '../../ui/input/input.component';
+import { ModalComponent } from '../../ui/modal/modal.component';
 import { SelectComponent } from '../../ui/select/select.component';
 import { ButtonComponent } from '../../ui/button/button.component';
 
 @Component({
   selector: 'app-compra-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputComponent, SelectComponent, ButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputComponent, SelectComponent, ButtonComponent, ModalComponent],
   templateUrl: './compra-modal.html'
 })
 export class CompraModalComponent implements OnInit, OnChanges {
@@ -81,11 +82,14 @@ export class CompraModalComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log('CompraModal.ngOnChanges', changes);
     if (changes['isOpen'] && changes['isOpen'].currentValue === true) {
       this.isLoading = false;
+      console.log('CompraModal opening. compraToEdit:', this.compraToEdit);
 
       if (this.compraToEdit) {
         // Modo Edição: Preenche o formulário
+        console.log('Patching value for edit');
         this.form.patchValue({
           descricao: this.compraToEdit.descricao,
           valorTotal: this.compraToEdit.valorTotal,
@@ -97,6 +101,7 @@ export class CompraModalComponent implements OnInit, OnChanges {
         });
       } else {
         // Modo Criação: Limpa o formulário
+        console.log('Resetting form for new');
         this.form.reset({
           descricao: '',
           valorTotal: '',
@@ -111,6 +116,7 @@ export class CompraModalComponent implements OnInit, OnChanges {
   }
 
   onClose() {
+    console.log('CompraModal.onClose called');
     this.close.emit();
   }
 

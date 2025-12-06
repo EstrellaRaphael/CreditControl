@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, AlertTriangle, X } from 'lucide-angular';
+import { ModalComponent } from '../../ui/modal/modal.component';
 
 @Component({
     selector: 'app-confirm-modal',
     standalone: true,
-    imports: [CommonModule, LucideAngularModule],
+    imports: [CommonModule, LucideAngularModule, ModalComponent],
     templateUrl: './confirm-modal.component.html'
 })
 export class ConfirmModalComponent {

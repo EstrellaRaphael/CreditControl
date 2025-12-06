@@ -39,6 +39,7 @@ export class ButtonComponent {
     readonly icons = { loader: Loader2 };
 
     onClick(event: Event) {
+        console.log('ButtonComponent clicked', { disabled: this.disabled, loading: this.loading });
         if (!this.disabled && !this.loading) {
             this.action.emit(event);
         }

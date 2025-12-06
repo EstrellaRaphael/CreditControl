@@ -6,13 +6,14 @@ import { Cartao } from '../../../models/core.types';
 import { CartaoService } from '../../../services/cartao';
 import { ToastrService } from 'ngx-toastr';
 import { InputComponent } from '../../ui/input/input.component';
+import { ModalComponent } from '../../ui/modal/modal.component';
 import { SelectComponent } from '../../ui/select/select.component';
 import { ButtonComponent } from '../../ui/button/button.component';
 
 @Component({
   selector: 'app-cartao-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputComponent, SelectComponent, ButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputComponent, SelectComponent, ButtonComponent, ModalComponent],
   templateUrl: './cartao-modal.html'
 })
 export class CartaoModalComponent implements OnChanges {

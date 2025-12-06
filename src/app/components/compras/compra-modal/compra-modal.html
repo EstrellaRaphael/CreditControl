@@ -1,102 +1,87 @@
-<div *ngIf="isOpen" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div
-        class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 shrink-0">
-            <h2 class="text-lg font-bold text-gray-900">{{ compraToEdit ? 'Editar Compra' : 'Nova Compra' }}</h2>
-            <button (click)="onClose()" class="text-gray-400 hover:text-gray-600">
-                <lucide-icon [img]="icons.close" class="w-5 h-5"></lucide-icon>
-            </button>
+<app-modal [isOpen]="isOpen" [title]="compraToEdit ? 'Editar Compra' : 'Nova Compra'" (close)="onClose()">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+        <div>
+            <app-input label="Descrição" formControlName="descricao"
+                placeholder="Ex: Jantar, Mercado, Uber"></app-input>
         </div>
 
-        <div class="overflow-y-auto p-6">
-            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-
-                <div>
-                    <app-input label="Descrição" formControlName="descricao"
-                        placeholder="Ex: Jantar, Mercado, Uber"></app-input>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <app-input label="Valor Total (R$)" type="number" formControlName="valorTotal"
-                            placeholder="0,00"></app-input>
-                    </div>
-                    <div>
-                        <app-input label="Data da Compra" type="date" formControlName="dataCompra"></app-input>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <app-select label="Cartão" formControlName="cartaoId" [options]="cartaoOptions"
-                            placeholder="Selecione"></app-select>
-                    </div>
-                    <div>
-                        <app-select label="Categoria" formControlName="categoria" [options]="categoriaOptions"
-                            placeholder="Selecione..."></app-select>
-                    </div>
-                </div>
-
-                <hr class="border-gray-100">
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Como foi o pagamento?</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-
-                        <label class="cursor-pointer relative">
-                            <input type="radio" formControlName="tipo" value="avista" class="peer sr-only">
-                            <div
-                                class="p-3 border rounded-lg hover:bg-gray-50 peer-checked:border-primary peer-checked:bg-purple-50 peer-checked:text-primary transition-all text-center h-full flex flex-col justify-center items-center gap-1">
-                                <span class="font-medium text-sm">À Vista</span>
-                                <span class="text-xs text-gray-500 peer-checked:text-purple-600">1x</span>
-                            </div>
-                        </label>
-
-                        <label class="cursor-pointer relative">
-                            <input type="radio" formControlName="tipo" value="parcelado" class="peer sr-only">
-                            <div
-                                class="p-3 border rounded-lg hover:bg-gray-50 peer-checked:border-primary peer-checked:bg-purple-50 peer-checked:text-primary transition-all text-center h-full flex flex-col justify-center items-center gap-1">
-                                <span class="font-medium text-sm">Parcelado</span>
-                                <span class="text-xs text-gray-500 peer-checked:text-purple-600">2x até 24x</span>
-                            </div>
-                        </label>
-
-                        <label class="cursor-pointer relative">
-                            <input type="radio" formControlName="tipo" value="recorrente" class="peer sr-only">
-                            <div
-                                class="p-3 border rounded-lg hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 transition-all text-center h-full flex flex-col justify-center items-center gap-1">
-                                <span class="font-medium text-sm">Assinatura</span>
-                                <span class="text-xs text-gray-500 peer-checked:text-blue-600">Mensal</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <div *ngIf="form.get('tipo')?.value === 'parcelado'"
-                    class="bg-purple-50 p-4 rounded-lg border border-purple-100 animate-in slide-in-from-top-2">
-                    <label class="block text-sm font-medium text-purple-900 mb-1">Número de Parcelas</label>
-                    <app-select formControlName="qtdParcelas" [options]="parcelaOptions"></app-select>
-                    <div class="flex items-start gap-2 mt-2 text-xs text-purple-700">
-                        <lucide-icon [img]="icons.check" class="w-4 h-4 shrink-0"></lucide-icon>
-                        <p>O valor será dividido automaticamente. Ajustes de centavos irão para a primeira parcela.</p>
-                    </div>
-                </div>
-
-                <div *ngIf="form.get('tipo')?.value === 'recorrente'"
-                    class="bg-blue-50 p-4 rounded-lg border border-blue-100 animate-in slide-in-from-top-2 flex items-start gap-3">
-                    <lucide-icon [img]="icons.alert" class="w-5 h-5 text-blue-600 shrink-0 mt-0.5"></lucide-icon>
-                    <div class="text-sm text-blue-800">
-                        <p class="font-medium">Pagamento Recorrente</p>
-                        <p class="mt-1 opacity-90">Esta compra será lançada automaticamente todos os meses como uma
-                            despesa fixa.</p>
-                    </div>
-                </div>
-
-            </form>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <app-input label="Valor Total (R$)" type="number" formControlName="valorTotal"
+                    placeholder="0,00"></app-input>
+            </div>
+            <div>
+                <app-input label="Data da Compra" type="date" formControlName="dataCompra"></app-input>
+            </div>
         </div>
 
-        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <app-select label="Cartão" formControlName="cartaoId" [options]="cartaoOptions"
+                    placeholder="Selecione"></app-select>
+            </div>
+            <div>
+                <app-select label="Categoria" formControlName="categoria" [options]="categoriaOptions"
+                    placeholder="Selecione..."></app-select>
+            </div>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">Como foi o pagamento?</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                <label class="cursor-pointer relative">
+                    <input type="radio" formControlName="tipo" value="avista" class="peer sr-only">
+                    <div
+                        class="p-3 border rounded-lg hover:bg-gray-50 peer-checked:border-primary peer-checked:bg-purple-50 peer-checked:text-primary transition-all text-center h-full flex flex-col justify-center items-center gap-1">
+                        <span class="font-medium text-sm">À Vista</span>
+                        <span class="text-xs text-gray-500 peer-checked:text-purple-600">1x</span>
+                    </div>
+                </label>
+
+                <label class="cursor-pointer relative">
+                    <input type="radio" formControlName="tipo" value="parcelado" class="peer sr-only">
+                    <div
+                        class="p-3 border rounded-lg hover:bg-gray-50 peer-checked:border-primary peer-checked:bg-purple-50 peer-checked:text-primary transition-all text-center h-full flex flex-col justify-center items-center gap-1">
+                        <span class="font-medium text-sm">Parcelado</span>
+                        <span class="text-xs text-gray-500 peer-checked:text-purple-600">2x até 24x</span>
+                    </div>
+                </label>
+
+                <label class="cursor-pointer relative">
+                    <input type="radio" formControlName="tipo" value="recorrente" class="peer sr-only">
+                    <div
+                        class="p-3 border rounded-lg hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 transition-all text-center h-full flex flex-col justify-center items-center gap-1">
+                        <span class="font-medium text-sm">Assinatura</span>
+                        <span class="text-xs text-gray-500 peer-checked:text-blue-600">Mensal</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div *ngIf="form.get('tipo')?.value === 'parcelado'"
+            class="bg-purple-50 p-4 rounded-lg border border-purple-100 animate-in slide-in-from-top-2">
+            <label class="block text-sm font-medium text-purple-900 mb-1">Número de Parcelas</label>
+            <app-select formControlName="qtdParcelas" [options]="parcelaOptions"></app-select>
+            <div class="flex items-start gap-2 mt-2 text-xs text-purple-700">
+                <lucide-icon [img]="icons.check" class="w-4 h-4 shrink-0"></lucide-icon>
+                <p>O valor será dividido automaticamente. Ajustes de centavos irão para a primeira parcela.</p>
+            </div>
+        </div>
+
+        <div *ngIf="form.get('tipo')?.value === 'recorrente'"
+            class="bg-blue-50 p-4 rounded-lg border border-blue-100 animate-in slide-in-from-top-2 flex items-start gap-3">
+            <lucide-icon [img]="icons.alert" class="w-5 h-5 text-blue-600 shrink-0 mt-0.5"></lucide-icon>
+            <div class="text-sm text-blue-800">
+                <p class="font-medium">Pagamento Recorrente</p>
+                <p class="mt-1 opacity-90">Esta compra será lançada automaticamente todos os meses como uma
+                    despesa fixa.</p>
+            </div>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3">
             <app-button variant="secondary" (action)="onClose()">
                 Cancelar
             </app-button>
@@ -104,6 +89,5 @@
                 {{ compraToEdit ? 'Salvar Alterações' : 'Adicionar Compra' }}
             </app-button>
         </div>
-
-    </div>
-</div>
+    </form>
+</app-modal>
