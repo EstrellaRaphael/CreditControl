@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, deleteDoc, updateDoc, doc, query, orderBy, onSnapshot } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { Observable, switchMap, of, firstValueFrom } from 'rxjs';
 import { Categoria } from '../models/core.types';
@@ -44,6 +44,14 @@ export class CategoriaService {
             ...categoria,
             userId: user.uid
         });
+    }
+
+    async updateCategoria(id: string, dados: Partial<Categoria>) {
+        const user = await firstValueFrom(this.authService.user$);
+        if (!user) throw new Error('Usuário não autenticado');
+
+        const categoriaRef = doc(this.firestore, `users/${user.uid}/categorias/${id}`);
+        return updateDoc(categoriaRef, dados);
     }
 
     async deleteCategoria(id: string) {

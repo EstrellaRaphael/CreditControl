@@ -1,26 +1,41 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
-import { LucideAngularModule, Trash2, Plus, Tag } from 'lucide-angular';
+import { LucideAngularModule, Trash2, Plus, Tag, Edit, X } from 'lucide-angular';
 import { CategoriaService } from '../../../services/categoria';
+import { CompraService } from '../../../services/compra';
 import { Observable } from 'rxjs';
 import { Categoria } from '../../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
+import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 
 @Component({
     selector: 'app-categorias-page',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, ConfirmModalComponent],
     templateUrl: './categorias-page.html'
 })
 export class CategoriasPageComponent {
     private fb = inject(FormBuilder);
     private categoriaService = inject(CategoriaService);
+    private compraService = inject(CompraService);
     private toastr = inject(ToastrService);
 
     categorias$: Observable<Categoria[]> = this.categoriaService.getCategorias();
 
-    readonly icons = { trash: Trash2, plus: Plus, tag: Tag };
+    readonly icons = { trash: Trash2, plus: Plus, tag: Tag, edit: Edit, x: X };
+
+    editingCategoria: Categoria | null = null;
+
+    // Controle do Modal de Confirmação
+    isConfirmModalOpen = false;
+    confirmModalConfig = {
+        title: '',
+        message: '',
+        type: 'warning' as 'warning' | 'danger' | 'info',
+        confirmText: 'Confirmar',
+        action: () => { }
+    };
 
     form: FormGroup = this.fb.group({
         nome: ['', [Validators.required, Validators.minLength(2)]],
@@ -52,18 +67,56 @@ export class CategoriasPageComponent {
         if (this.form.invalid) return;
 
         try {
-            await this.categoriaService.addCategoria(this.form.value);
-            this.toastr.success('Categoria adicionada!', 'Sucesso');
-            this.form.reset({ nome: '', cor: '#3b82f6' });
+            if (this.editingCategoria && this.editingCategoria.id) {
+                await this.categoriaService.updateCategoria(this.editingCategoria.id, this.form.value);
+                this.toastr.success('Categoria atualizada!', 'Sucesso');
+                this.cancelEdit();
+            } else {
+                await this.categoriaService.addCategoria(this.form.value);
+                this.toastr.success('Categoria adicionada!', 'Sucesso');
+                this.form.reset({ nome: '', cor: '#3b82f6' });
+            }
         } catch (error) {
             console.error(error);
-            this.toastr.error('Erro ao adicionar categoria.', 'Erro');
+            this.toastr.error('Erro ao salvar categoria.', 'Erro');
         }
     }
 
-    async deleteCategoria(id: string) {
-        if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
+    editCategoria(categoria: Categoria) {
+        this.editingCategoria = categoria;
+        this.form.patchValue({
+            nome: categoria.nome,
+            cor: categoria.cor || '#3b82f6'
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
+    cancelEdit() {
+        this.editingCategoria = null;
+        this.form.reset({ nome: '', cor: '#3b82f6' });
+    }
+
+    async deleteCategoria(categoria: Categoria) {
+        if (!categoria.id || !categoria.nome) return;
+
+        const isInUse = await this.compraService.checkCategoriaInUse(categoria.nome);
+        if (isInUse) {
+            this.toastr.warning('Esta categoria está em uso e não pode ser excluída.', 'Atenção');
+            return;
+        }
+
+        this.confirmModalConfig = {
+            title: 'Excluir Categoria',
+            message: `Tem certeza que deseja excluir a categoria "${categoria.nome}"?`,
+            type: 'danger',
+            confirmText: 'Excluir',
+            action: () => this.processarExclusao(categoria.id!)
+        };
+        this.isConfirmModalOpen = true;
+    }
+
+    async processarExclusao(id: string) {
+        this.isConfirmModalOpen = false;
         try {
             await this.categoriaService.deleteCategoria(id);
             this.toastr.success('Categoria removida.', 'Feito');

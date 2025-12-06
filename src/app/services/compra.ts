@@ -223,4 +223,16 @@ export class CompraService {
 
     return batch.commit();
   }
+
+  // Verifica se uma categoria está em uso por alguma compra
+  async checkCategoriaInUse(categoriaNome: string): Promise<boolean> {
+    const user = await firstValueFrom(this.authService.user$);
+    if (!user) return false;
+
+    const comprasRef = collection(this.firestore, `users/${user.uid}/compras`);
+    const q = query(comprasRef, where('categoria', '==', categoriaNome), limit(1));
+    const snapshot = await getDocs(q);
+
+    return !snapshot.empty;
+  }
 }

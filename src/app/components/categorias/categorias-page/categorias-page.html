@@ -12,12 +12,21 @@
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl border border-gray-200 shadow-sm sticky top-24 overflow-hidden">
 
-                <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <lucide-icon [img]="icons.plus" class="w-5 h-5 text-primary"></lucide-icon>
-                        Nova Categoria
-                    </h2>
-                    <p class="text-sm text-gray-500 mt-1">Crie uma tag personalizada</p>
+                <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <lucide-icon [img]="editingCategoria ? icons.edit : icons.plus"
+                                class="w-5 h-5 text-primary"></lucide-icon>
+                            {{ editingCategoria ? 'Editar Categoria' : 'Nova Categoria' }}
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">{{ editingCategoria ? 'Atualize os dados da tag' : 'Crie
+                            uma tag personalizada' }}</p>
+                    </div>
+                    <button *ngIf="editingCategoria" (click)="cancelEdit()"
+                        class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                        title="Cancelar edição">
+                        <lucide-icon [img]="icons.x" class="w-5 h-5"></lucide-icon>
+                    </button>
                 </div>
 
                 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
@@ -74,7 +83,7 @@
 
                     <button type="submit" [disabled]="form.invalid"
                         class="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
-                        Criar Categoria
+                        {{ editingCategoria ? 'Salvar Alterações' : 'Criar Categoria' }}
                     </button>
                 </form>
             </div>
@@ -112,11 +121,18 @@
                                 </div>
                             </div>
 
-                            <button (click)="deleteCategoria(cat.id!)"
-                                class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                title="Excluir categoria">
-                                <lucide-icon [img]="icons.trash" class="w-5 h-5"></lucide-icon>
-                            </button>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button (click)="editCategoria(cat)"
+                                    class="p-2.5 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors"
+                                    title="Editar categoria">
+                                    <lucide-icon [img]="icons.edit" class="w-5 h-5"></lucide-icon>
+                                </button>
+                                <button (click)="deleteCategoria(cat)"
+                                    class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Excluir categoria">
+                                    <lucide-icon [img]="icons.trash" class="w-5 h-5"></lucide-icon>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -131,3 +147,9 @@
 
     </div>
 </div>
+
+<app-confirm-modal [isOpen]="isConfirmModalOpen" [title]="confirmModalConfig.title"
+    [message]="confirmModalConfig.message" [type]="confirmModalConfig.type"
+    [confirmText]="confirmModalConfig.confirmText" (confirm)="confirmModalConfig.action()"
+    (cancel)="isConfirmModalOpen = false">
+</app-confirm-modal>
