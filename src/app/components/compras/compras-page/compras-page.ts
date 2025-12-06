@@ -125,17 +125,13 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   }
 
   editCompra(compra: Compra) {
-    console.log('ComprasPage.editCompra called', compra);
     this.editingCompra = compra;
     this.isModalOpen = true;
-    this.cdr.detectChanges(); // Force detection
   }
 
   closeModal() {
-    console.log('ComprasPage.closeModal called');
     this.isModalOpen = false;
     this.editingCompra = null;
-    this.cdr.detectChanges();
   }
 
   toggleFilters() {

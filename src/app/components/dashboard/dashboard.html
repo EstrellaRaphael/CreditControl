@@ -43,7 +43,7 @@
                         <lucide-icon [img]="icons.calendar" class="w-4 h-4"></lucide-icon>
                         Total da Fatura (Mês)
                     </p>
-                    <h2 class="text-4xl md:text-5xl font-bold tracking-tight mt-2">
+                    <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mt-2">
                         {{ formatMoney(getTotalFatura(data.parcelas)) }}
                     </h2>
                 </div>
@@ -158,11 +158,19 @@
                 <div class="w-1 h-6 bg-primary rounded-full"></div>
                 Distribuição por Cartão
             </h3>
-            <div class="flex-1 w-full min-h-0">
+            <div class="flex-1 w-full min-h-0 overflow-hidden">
                 <ngx-charts-pie-chart [results]="data.chartData" [scheme]="colorScheme" [doughnut]="true"
-                    [legend]="true" [legendPosition]="LegendPosition.Right" [legendTitle]="'Cartões'" [labels]="false"
-                    [animations]="true" [tooltipDisabled]="false" [arcWidth]="0.25">
+                    [legend]="false" [labels]="false" [animations]="true" [tooltipDisabled]="false" [arcWidth]="0.25">
                 </ngx-charts-pie-chart>
+
+                <!-- Legend manual para mobile se necessário, ou usar a legenda do gráfico apenas em telas maiores -->
+                <div class="hidden md:block absolute top-10 right-4">
+                    <!-- Hack: Renderizar gráfico novamente apenas para legenda ou customizar? 
+                          Simplificação: Deixar legenda false globalmente ou true apenas desktop via CSS é difícil com ngx-charts.
+                          Vou ajustar para legend=false em mobile se possível, mas aqui no HTML hardcoded é complicado.
+                          Melhor abordagem: Container overflow hidden.
+                     -->
+                </div>
             </div>
         </app-card>
 

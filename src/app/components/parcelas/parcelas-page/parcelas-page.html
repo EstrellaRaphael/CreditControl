@@ -7,7 +7,8 @@
             <p class="text-gray-500">Gerencie suas parcelas mensais</p>
         </div>
 
-        <div class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
+        <div
+            class="flex items-center justify-between sm:justify-center gap-2 bg-white rounded-xl border border-gray-200 p-1 shadow-sm w-full sm:w-auto">
             <button type="button" (click)="mesAnterior()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Mês anterior">
                 <lucide-icon [img]="icons.chevronLeft" class="w-5 h-5 text-gray-600"></lucide-icon>
@@ -24,7 +25,7 @@
 
     <!-- Filtros -->
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-        <div class="flex flex-col md:flex-row gap-4 items-end">
+        <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
             <!-- Filtro Cartão -->
             <div class="flex-1">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Cartão</label>

@@ -54,12 +54,10 @@ export class ModalComponent {
     protected readonly icons = { x: X };
 
     onBackdropClick() {
-        console.log('ModalComponent: Backdrop clicked');
         this.close.emit();
     }
 
     onCloseClick() {
-        console.log('ModalComponent: Close button clicked');
         this.close.emit();
     }
 }
