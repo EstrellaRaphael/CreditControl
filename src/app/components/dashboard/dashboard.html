@@ -110,37 +110,37 @@
             </div>
         </app-card>
     </div>
+
     <!-- New Stats Row: Highlights of the Month -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4"
+    <!-- Mobile: Horizontal Scroll (Carousel), Desktop: Grid -->
+    <div class="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0"
         *ngIf="data.stats.topSpender || data.stats.favoriteCard || data.stats.biggestPurchase">
 
         <!-- Top Spender -->
-        <app-card class="p-4" *ngIf="data.stats.topSpender as stat">
+        <app-card class="min-w-[85vw] md:min-w-0 snap-center p-4" *ngIf="data.stats.topSpender as stat">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <div
+                    class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
                     <img *ngIf="stat.photo" [src]="stat.photo" class="w-full h-full rounded-full object-cover">
                     <lucide-icon *ngIf="!stat.photo" [img]="icons.user" class="w-6 h-6"></lucide-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{
-                        stat.label }}</p>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{ stat.label }}</p>
                     <p class="font-bold text-gray-900">{{ stat.name }}</p>
-                    <p class="text-sm text-indigo-600 font-semibold">{{ formatMoney(stat.value) }}
-                    </p>
+                    <p class="text-sm text-indigo-600 font-semibold">{{ formatMoney(stat.value) }}</p>
                 </div>
             </div>
         </app-card>
 
         <!-- Favorite Card -->
-        <app-card class="p-4" *ngIf="data.stats.favoriteCard as stat">
+        <app-card class="min-w-[85vw] md:min-w-0 snap-center p-4" *ngIf="data.stats.favoriteCard as stat">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-sm"
+                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-sm shrink-0"
                     [style.background-color]="stat.color">
                     <lucide-icon [img]="icons.creditCard" class="w-6 h-6"></lucide-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{
-                        stat.label }}</p>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{ stat.label }}</p>
                     <p class="font-bold text-gray-900">{{ stat.name }}</p>
                     <p class="text-sm text-gray-600">{{ stat.count }} compras</p>
                 </div>
@@ -148,16 +148,14 @@
         </app-card>
 
         <!-- Biggest Purchase -->
-        <app-card class="p-4" *ngIf="data.stats.biggestPurchase as stat">
+        <app-card class="min-w-[85vw] md:min-w-0 snap-center p-4" *ngIf="data.stats.biggestPurchase as stat">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shrink-0">
                     <lucide-icon [img]="icons.bag" class="w-6 h-6"></lucide-icon>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{
-                        stat.label }}</p>
-                    <p class="font-bold text-gray-900 truncate max-w-[150px]" title="{{stat.name}}">
-                        {{ stat.name }}</p>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{ stat.label }}</p>
+                    <p class="font-bold text-gray-900 truncate max-w-[150px]" title="{{stat.name}}">{{ stat.name }}</p>
                     <p class="text-sm text-pink-600 font-semibold">{{ formatMoney(stat.value) }}</p>
                 </div>
             </div>
@@ -173,21 +171,33 @@
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" *ngIf="data.cartoes.length > 0; else noCards">
+    <!-- Mobile: Flex Column (Sidebar First), Desktop: Grid (Charts Left) -->
+    <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6" *ngIf="data.cartoes.length > 0; else noCards">
 
-        <!-- Charts Column (2/3 on Desktop) -->
-        <div class="lg:col-span-2 space-y-6">
+        <!-- Charts Column (Order 2 on Mobile, 1 on Desktop) -->
+        <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
             <!-- Distribution Chart -->
             <app-card class="p-5">
                 <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <div class="w-1 h-5 bg-primary rounded-full"></div>
                     Distribuição por Cartão
                 </h3>
-                <div class="h-[280px] w-full overflow-hidden">
+                <div class="h-[280px] w-full overflow-hidden flex items-center justify-center relative">
+                    <!-- Advanced Pie Chart -->
                     <ngx-charts-pie-chart [results]="data.chartData" [scheme]="colorScheme" [doughnut]="true"
-                        [legend]="true" [legendPosition]="LegendPosition.Right" [labels]="false" [animations]="true"
-                        [tooltipDisabled]="false" [arcWidth]="0.3">
+                        [legend]="false" [labels]="true" [animations]="true" [tooltipDisabled]="false" [arcWidth]="0.35"
+                        [gradient]="true">
                     </ngx-charts-pie-chart>
+                </div>
+                <!-- Custom Legend -->
+                <div class="mt-4 flex flex-wrap justify-center gap-4">
+                    <div *ngFor="let item of data.chartData; let i = index" class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full"
+                            [style.background-color]="colorScheme.domain[i % colorScheme.domain.length]"></div>
+                        <span class="text-xs font-medium text-gray-600">{{ item.name }}</span>
+                        <span class="text-xs font-bold text-gray-900">{{ ((item.value / getTotalFatura(data.parcelas)) *
+                            100) | number:'1.0-0' }}%</span>
+                    </div>
                 </div>
             </app-card>
 
@@ -199,9 +209,15 @@
                 </h3>
                 <div class="h-[280px] w-full" *ngIf="historicoData$ | async as historico">
                     <ngx-charts-bar-vertical [results]="historico" [scheme]="colorScheme" [gradient]="true"
-                        [xAxis]="true" [yAxis]="true" [legend]="false" [showXAxisLabel]="false" [showYAxisLabel]="false"
-                        [animations]="true" [tooltipDisabled]="false" [showDataLabel]="false" [barPadding]="24"
-                        [roundEdges]="true">
+                        [xAxis]="true" [yAxis]="false" [legend]="false" [showXAxisLabel]="false"
+                        [showYAxisLabel]="false" [animations]="true" [tooltipDisabled]="false" [showDataLabel]="true"
+                        [barPadding]="30" [roundEdges]="true" [showGridLines]="false">
+                        <ng-template #tooltipTemplate let-model="model">
+                            <div class="bg-gray-900 text-white text-xs p-2 rounded shadow-lg">
+                                <p class="font-bold mb-1">{{ model.name }}</p>
+                                <p>{{ formatMoney(model.value) }}</p>
+                            </div>
+                        </ng-template>
                     </ngx-charts-bar-vertical>
                 </div>
                 <div *ngIf="!(historicoData$ | async)" class="h-[280px] flex items-center justify-center">
@@ -210,8 +226,8 @@
             </app-card>
         </div>
 
-        <!-- Sidebar Column (1/3 on Desktop) -->
-        <div class="space-y-6">
+        <!-- Sidebar Column (Order 1 on Mobile, 2 on Desktop) -->
+        <div class="space-y-6 order-1 lg:order-2">
             <!-- Top Categories -->
             <app-card class="p-5">
                 <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -228,8 +244,7 @@
                             </span>
                             <span class="font-medium text-gray-700 text-sm">{{ cat.name }}</span>
                         </div>
-                        <span class="font-bold text-gray-900 text-sm">{{ formatMoney(cat.value)
-                            }}</span>
+                        <span class="font-bold text-gray-900 text-sm">{{ formatMoney(cat.value) }}</span>
                     </div>
                 </div>
                 <ng-template #noCategorias>
@@ -249,8 +264,7 @@
                         <div class="flex items-center gap-2 min-w-0">
                             <div class="w-2 h-2 rounded-full flex-shrink-0 bg-primary">
                             </div>
-                            <span class="text-sm text-gray-700 truncate">{{ parcela.compraDescricao
-                                }}</span>
+                            <span class="text-sm text-gray-700 truncate">{{ parcela.compraDescricao }}</span>
                         </div>
                         <span class="font-semibold text-gray-900 text-sm flex-shrink-0 ml-2">{{
                             formatMoney(parcela.valor)

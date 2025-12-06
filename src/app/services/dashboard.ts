@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, query, where, onSnapshot, writeBatch, doc, increment, getDocs } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, onSnapshot, writeBatch, doc, increment, getDocs, limit, getDoc } from '@angular/fire/firestore';
 import { HouseholdService } from './household.service';
 import { CompraService } from './compra';
 import { Observable, switchMap, of, combineLatest, map } from 'rxjs';
@@ -200,5 +200,51 @@ export class DashboardService {
     }
 
     return batch.commit();
+  }
+  /**
+   * REPARO: Corrige parcelas antigas que ficaram sem userId.
+   * Busca parcelas sem usuário, consulta a compra original e atualiza.
+   */
+  async repairParcelasSemUser() {
+    const householdId = this.householdService.getHouseholdId();
+    if (!householdId) return;
+
+    // 1. Busca todas as parcelas (Idealmente filtraria por userId == '', mas Firestore não suporta vazio em index as vezes)
+    // Vamos buscar as do mês atual que vieram zeradas no dashboard, mas aqui vamos pegar um lote
+    // Para simplificar, vamos buscar parcelas onde userId == '' via query
+    const parcelasRef = collection(this.firestore, `households/${householdId}/parcelas`);
+    const q = query(parcelasRef, where('userId', '==', ''), limit(50)); // Faz em lotes para não travar
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) return;
+
+    console.log(`[Repair] Encontradas ${snapshot.size} parcelas sem usuário.`);
+    const batch = writeBatch(this.firestore);
+    const comprasCache = new Map<string, string>(); // compraId -> userId
+
+    for (const docSnap of snapshot.docs) {
+      const p = docSnap.data() as Parcela;
+      if (!p.compraId) continue;
+
+      let userId = comprasCache.get(p.compraId);
+
+      if (!userId) {
+        // Busca a compra pai
+        const compraRef = doc(this.firestore, `households/${householdId}/compras/${p.compraId}`);
+        const compraSnap = await getDoc(compraRef);
+        if (compraSnap.exists()) {
+          const compra = compraSnap.data() as Compra;
+          userId = compra.createdBy || compra.userId; // Tenta pegar de createdBy
+          if (userId) comprasCache.set(p.compraId, userId);
+        }
+      }
+
+      if (userId) {
+        batch.update(docSnap.ref, { userId: userId });
+      }
+    }
+
+    await batch.commit();
+    console.log(`[Repair] ${snapshot.size} parcelas corrigidas.`);
   }
 }

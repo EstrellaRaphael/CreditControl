@@ -57,9 +57,9 @@ export class DashboardComponent implements OnInit {
       ...data,
       chartData: this.getCategoryData(data.parcelas, data.cartoes),
       stats: {
-        topSpender: this.getTopSpender(data.compras, data.members),
-        favoriteCard: this.getFavoriteCard(data.compras, data.cartoes),
-        biggestPurchase: this.getBiggestPurchase(data.compras)
+        topSpender: this.getTopSpender(data.parcelas, data.members),
+        favoriteCard: this.getFavoriteCard(data.parcelas, data.cartoes),
+        biggestPurchase: this.getBiggestPurchase(data.parcelas)
       }
     }))
   );
@@ -69,15 +69,29 @@ export class DashboardComponent implements OnInit {
     switchMap(date => this.dashboardService.getHistorico(date.mes, date.ano))
   );
 
-  // Configurações dos Gráficos
-  colorScheme: Color = {
-    name: 'custom',
-    selectable: true,
-    group: ScaleType.Ordinal,
-    domain: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899']
+  // Custom Premium Palette
+  colorScheme: any = {
+    domain: [
+      '#8B5CF6', // Violet (Primary)
+      '#EC4899', // Pink
+      '#10B981', // Emerald
+      '#F59E0B', // Amber
+      '#3B82F6', // Blue
+      '#6366F1'  // Indigo
+    ]
   };
 
-  ngOnInit() { }
+  // Chart Options
+  showLegend = false;
+  showLabels = true;
+  isDoughnut = true;
+  legendPosition = 'below';
+  gradient = true;
+
+  ngOnInit() {
+    // Tenta reparar dados legados que podem estar sem userId
+    this.dashboardService.repairParcelasSemUser();
+  }
 
   // Navegação de Mês
   changeMonth(delta: number) {
@@ -144,14 +158,14 @@ export class DashboardComponent implements OnInit {
       .slice(0, 5);
   }
 
-  // --- Statistics Helpers ---
+  // --- Statistics Helpers (Updated: Based on Monthly Bill / Parcelas) ---
 
-  getTopSpender(compras: Compra[], members: HouseholdMember[]) {
-    if (!compras.length || !members.length) return null;
+  getTopSpender(parcelas: Parcela[], members: HouseholdMember[]) {
+    if (!parcelas.length || !members.length) return null;
 
-    const spendByMember = compras.reduce((acc, compra) => {
-      const uid = compra.createdBy || 'unknown';
-      acc[uid] = (acc[uid] || 0) + compra.valorTotal; // Ranking by Value
+    const spendByMember = parcelas.reduce((acc, parcela) => {
+      const uid = parcela.userId || 'unknown';
+      acc[uid] = (acc[uid] || 0) + parcela.valor; // Ranking by Value on Bill
       return acc;
     }, {} as Record<string, number>);
 
@@ -166,12 +180,12 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-  getFavoriteCard(compras: Compra[], cartoes: Cartao[]) {
-    if (!compras.length) return null;
+  getFavoriteCard(parcelas: Parcela[], cartoes: Cartao[]) {
+    if (!parcelas.length) return null;
 
-    const usageByCard = compras.reduce((acc, compra) => {
-      const cardId = compra.cartaoId;
-      acc[cardId] = (acc[cardId] || 0) + 1; // Ranking by Frequency
+    const usageByCard = parcelas.reduce((acc, parcela) => {
+      const cardId = parcela.cartaoId;
+      acc[cardId] = (acc[cardId] || 0) + 1; // Ranking by Frequency on Bill
       return acc;
     }, {} as Record<string, number>);
 
@@ -182,18 +196,18 @@ export class DashboardComponent implements OnInit {
       name: card?.nome || 'Cartão Excluído',
       color: card?.cor || '#374151',
       count: usageByCard[topCardId],
-      label: 'Cartão Favorito'
+      label: 'Cartão Mais Utilizado'
     };
   }
 
-  getBiggestPurchase(compras: Compra[]) {
-    if (!compras.length) return null;
+  getBiggestPurchase(parcelas: Parcela[]) {
+    if (!parcelas.length) return null;
 
-    const biggest = compras.reduce((prev, current) => (prev.valorTotal > current.valorTotal) ? prev : current);
+    const biggest = parcelas.reduce((prev, current) => (prev.valor > current.valor) ? prev : current);
 
     return {
-      name: biggest.descricao,
-      value: biggest.valorTotal,
+      name: biggest.compraDescricao || 'Parcela',
+      value: biggest.valor,
       label: 'Maior Compra'
     };
   }

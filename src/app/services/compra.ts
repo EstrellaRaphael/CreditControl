@@ -77,7 +77,7 @@ export class CompraService {
     const novaCompra: Compra = {
       ...compra,
       id: compraId,
-      userId: '',
+      userId: user?.uid || '',
       cartaoNome: cartao.nome,
       cartaoCor: cartao.cor,
       parcelasPagas: 0,
@@ -88,7 +88,7 @@ export class CompraService {
     batch.set(compraRef, novaCompra);
 
     // Gera Parcelas
-    const parcelas = InstallmentCalculator.calculate(novaCompra, cartao, '', compraId);
+    const parcelas = InstallmentCalculator.calculate(novaCompra, cartao, user?.uid || '', compraId);
     parcelas.forEach(parcela => {
       const parcelaRef = doc(collection(this.firestore, `households/${householdId}/parcelas`));
       batch.set(parcelaRef, parcela);
