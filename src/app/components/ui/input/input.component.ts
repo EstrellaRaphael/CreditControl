@@ -82,7 +82,9 @@ export class InputComponent implements ControlValueAccessor {
     }
 
     onInput(event: Event) {
-        const value = (event.target as HTMLInputElement).value;
+        const rawValue = (event.target as HTMLInputElement).value;
+        // Parse as number if type is 'number' to avoid string concatenation issues
+        const value = this.type === 'number' ? (rawValue === '' ? 0 : parseFloat(rawValue)) : rawValue;
         this.value = value;
         this.onChange(value);
     }

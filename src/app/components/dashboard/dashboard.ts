@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check } from 'lucide-angular';
+import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check, CreditCard } from 'lucide-angular';
 import { Observable, BehaviorSubject, switchMap, map } from 'rxjs';
 import { Router } from '@angular/router';
 import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts';
@@ -23,7 +23,7 @@ import { ToastrService } from 'ngx-toastr';
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
   private toastr = inject(ToastrService);
-  private router = inject(Router); // Add Router
+  private router = inject(Router);
 
   navigateToCartoes = () => {
     this.router.navigate(['/cartoes']);
@@ -48,7 +48,7 @@ export class DashboardComponent implements OnInit {
 
   public LegendPosition = LegendPosition;
 
-  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check: Check };
+  readonly icons = { trending: TrendingDown, wallet: Wallet, calendar: Calendar, prev: ArrowLeft, next: ArrowRight, check: Check, creditCard: CreditCard };
 
   // Dados reativos que vêm do Service (já combinados: cartoes + parcelas)
   dashboardData$ = this.dateControl$.pipe(
@@ -58,6 +58,7 @@ export class DashboardComponent implements OnInit {
       chartData: this.getCategoryData(data.parcelas, data.cartoes)
     }))
   );
+
   // NOVO: Dados exclusivos para o Histórico
   historicoData$ = this.dateControl$.pipe(
     switchMap(date => this.dashboardService.getHistorico(date.mes, date.ano))
@@ -105,16 +106,13 @@ export class DashboardComponent implements OnInit {
   }
 
   // Prepara dados para o Gráfico de Categorias (Donut)
-  // Agora cruza com a lista de cartões para pegar o nome correto
   getCategoryData(parcelas: Parcela[], cartoes: Cartao[]): any[] {
-    // 1. Agrupa valor por ID do cartão
     const agrupado = parcelas.reduce((acc: any, curr) => {
       const key = curr.cartaoId;
       acc[key] = (acc[key] || 0) + curr.valor;
       return acc;
     }, {});
 
-    // 2. Transforma em formato para o gráfico: { name: 'Nubank', value: 500 }
     return Object.keys(agrupado).map(key => {
       const cartaoEncontrado = cartoes.find(c => c.id === key);
       const nomeVisual = cartaoEncontrado ? cartaoEncontrado.nome : 'Cartão Excluído';
@@ -124,6 +122,21 @@ export class DashboardComponent implements OnInit {
         value: agrupado[key]
       };
     });
+  }
+
+  // NOVO: Agrupa parcelas por categoria e retorna as top 5
+  getTopCategorias(parcelas: Parcela[]): { name: string, value: number }[] {
+    const agrupado = parcelas.reduce((acc: Record<string, number>, curr) => {
+      // Use compraDescricao since Parcela doesn't have categoria directly
+      const key = (curr as any).categoria || curr.compraDescricao || 'Sem Categoria';
+      acc[key] = (acc[key] || 0) + curr.valor;
+      return acc;
+    }, {});
+
+    return Object.entries(agrupado)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
   }
 
   // Helper para nome do mês
@@ -136,17 +149,13 @@ export class DashboardComponent implements OnInit {
   }
 
   getVencimentoFormatado(cartao: Cartao, dataAtual: { mes: number, ano: number }): string {
-    // Formata o dia para ter 2 dígitos (05, 10...)
     const dia = cartao.diaVencimento.toString().padStart(2, '0');
-    // Formata o mês para ter 2 dígitos
     const mes = dataAtual.mes.toString().padStart(2, '0');
-
     return `${dia}/${mes}`;
   }
 
   isFaturaPaga(parcelas: Parcela[]): boolean {
     if (parcelas.length === 0) return true;
-    // Retorna true se NÃO existir nenhuma parcela com status PENDENTE
     return !parcelas.some(p => p.status === 'PENDENTE');
   }
 
@@ -183,4 +192,3 @@ export class DashboardComponent implements OnInit {
     }
   }
 }
-
