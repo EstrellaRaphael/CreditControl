@@ -9,6 +9,8 @@ import { BehaviorSubject, Subscription, switchMap, combineLatest, tap } from 'rx
 import { Parcela, Compra, Cartao } from '../../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 
 // Interface estendida para exibição
 interface ParcelaEnriquecida extends Parcela {
@@ -22,7 +24,7 @@ interface ParcelaEnriquecida extends Parcela {
 @Component({
     selector: 'app-parcelas-page',
     standalone: true,
-    imports: [CommonModule, LucideAngularModule, ConfirmModalComponent, ReactiveFormsModule],
+    imports: [CommonModule, LucideAngularModule, ConfirmModalComponent, ReactiveFormsModule, SkeletonComponent, EmptyStateComponent],
     templateUrl: './parcelas-page.html'
 })
 export class ParcelasPageComponent implements OnInit, OnDestroy {

@@ -6,7 +6,7 @@
             <h1 class="text-2xl font-bold text-gray-900">Minhas Compras</h1>
             <p class="text-gray-500">Histórico de gastos e lançamentos</p>
         </div>
-        <button type="button" (click)="openNewCompraModal()"
+        <button type="button" (click)="openNewCompraModal()" aria-label="Nova compra"
             class="inline-flex items-center justify-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all font-medium shadow-lg shadow-primary/20 active:scale-95">
             <lucide-icon [img]="icons.plus" class="w-5 h-5"></lucide-icon>
             Nova Compra
@@ -19,11 +19,11 @@
             <div class="relative flex-1">
                 <lucide-icon [img]="icons.search"
                     class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></lucide-icon>
-                <input [formControl]="searchControl" type="text"
+                <input [formControl]="searchControl" type="text" aria-label="Buscar compras"
                     class="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-gray-400"
                     placeholder="Buscar por nome...">
             </div>
-            <button type="button" (click)="toggleFilters()"
+            <button type="button" (click)="toggleFilters()" aria-label="Mostrar filtros"
                 class="md:hidden flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700 font-medium transition-colors">
                 <lucide-icon [img]="icons.filter" class="w-4 h-4"></lucide-icon>
                 Filtros
@@ -59,7 +59,7 @@
                 </div>
             </div>
             <div class="flex items-end">
-                <button type="button" (click)="clearFilters()"
+                <button type="button" (click)="clearFilters()" aria-label="Limpar filtros"
                     class="w-full px-4 py-2.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium">
                     <lucide-icon [img]="icons.x" class="w-4 h-4"></lucide-icon>
                     Limpar Filtros
@@ -68,13 +68,17 @@
         </div>
     </div>
 
-    <!-- Loading -->
-    <div *ngIf="isLoading" class="py-16 text-center">
-        <div class="animate-pulse">Carregando...</div>
+    <!-- Skeleton Loading -->
+    <div *ngIf="isLoading" class="space-y-3">
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
     </div>
 
     <!-- List -->
     <div *ngIf="!isLoading" class="space-y-3">
+        <!-- Header da tabela (desktop) -->
         <div
             class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
             <div class="col-span-4">Descrição</div>
@@ -84,6 +88,7 @@
             <div class="col-span-1 text-center"></div>
         </div>
 
+        <!-- Items -->
         <div *ngFor="let compra of filteredCompras"
             class="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-primary/30 transition-all duration-200">
 
@@ -126,14 +131,12 @@
                 </div>
 
                 <div class="col-span-1 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                    <button type="button" (click)="editCompra(compra)"
-                        class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors"
-                        title="Editar">
+                    <button type="button" (click)="editCompra(compra)" aria-label="Editar compra"
+                        class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
                         <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
                     </button>
-                    <button type="button" (click)="deleteCompra(compra)"
-                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Excluir">
+                    <button type="button" (click)="deleteCompra(compra)" aria-label="Excluir compra"
+                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
                     </button>
                 </div>
@@ -162,11 +165,11 @@
                 <div class="flex flex-col items-end gap-3">
                     <span class="font-bold text-gray-900 text-lg">{{ formatMoney(compra.valorTotal) }}</span>
                     <div class="flex gap-1">
-                        <button type="button" (click)="editCompra(compra)"
+                        <button type="button" (click)="editCompra(compra)" aria-label="Editar"
                             class="p-2 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
                             <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
                         </button>
-                        <button type="button" (click)="deleteCompra(compra)"
+                        <button type="button" (click)="deleteCompra(compra)" aria-label="Excluir"
                             class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                             <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
                         </button>
@@ -175,17 +178,12 @@
             </div>
         </div>
 
-        <div *ngIf="filteredCompras.length === 0" class="py-16 text-center">
-            <div
-                class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                <lucide-icon [img]="icons.search" class="w-10 h-10 text-gray-300"></lucide-icon>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900">Nenhum resultado</h3>
-            <p class="text-gray-500 mt-1">Tente ajustar seus filtros ou adicionar uma nova compra.</p>
-            <button type="button" (click)="clearFilters()" class="mt-4 text-primary font-bold hover:underline">
-                Limpar filtros
-            </button>
-        </div>
+        <!-- Empty State -->
+        <app-empty-state *ngIf="filteredCompras.length === 0 && !isLoading" type="compra"
+            title="Nenhuma compra encontrada"
+            description="Comece adicionando sua primeira compra para acompanhar seus gastos."
+            actionLabel="Adicionar Compra" [actionCallback]="openNewCompraModal.bind(this)">
+        </app-empty-state>
     </div>
 </div>
 

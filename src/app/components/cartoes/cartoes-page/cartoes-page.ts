@@ -1,24 +1,38 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { LucideAngularModule, Plus, CreditCard, Trash2, Edit } from 'lucide-angular';
 import { Observable } from 'rxjs';
 import { Cartao } from '../../../models/core.types';
 import { CartaoModalComponent } from '../cartao-modal/cartao-modal';
 import { CartaoService } from '../../../services/cartao';
 import { ToastrService } from 'ngx-toastr';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-cartoes-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CartaoModalComponent, ConfirmModalComponent],
+  imports: [CommonModule, LucideAngularModule, CartaoModalComponent, ConfirmModalComponent, SkeletonComponent, EmptyStateComponent],
   templateUrl: './cartoes-page.html'
 })
-export class CartoesPage {
+export class CartoesPage implements OnInit {
   private cartaoService: CartaoService = inject(CartaoService);
   private toastr = inject(ToastrService);
 
+  private route = inject(ActivatedRoute);
+
   cartoes$: Observable<Cartao[]> = this.cartaoService.getCartoes();
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['action'] === 'new') {
+        // Pequeno delay para garantir que o modal abra suavemente após a navegação
+        setTimeout(() => this.openNewCartaoModal(), 100);
+      }
+    });
+  }
 
   // Controle do Modal
   isModalOpen = false;

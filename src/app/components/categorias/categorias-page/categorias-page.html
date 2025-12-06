@@ -93,15 +93,9 @@
 
             <div *ngIf="categorias$ | async as categorias; else loading">
 
-                <div *ngIf="categorias.length === 0"
-                    class="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <lucide-icon [img]="icons.tag" class="w-10 h-10 text-gray-300"></lucide-icon>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900">Nenhuma categoria</h3>
-                    <p class="text-gray-500 max-w-xs mx-auto mt-1">Crie suas próprias categorias para organizar melhor
-                        seus gastos.</p>
-                </div>
+                <app-empty-state *ngIf="categorias.length === 0" type="categoria" title="Nenhuma categoria"
+                    description="Crie suas próprias categorias para organizar melhor seus gastos.">
+                </app-empty-state>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div *ngFor="let cat of categorias"
@@ -138,8 +132,11 @@
 
             </div>
             <ng-template #loading>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-pulse">
-                    <div class="h-24 bg-gray-200 rounded-xl" *ngFor="let i of [1,2,3,4]"></div>
+                <div class="space-y-4">
+                    <app-skeleton type="row"></app-skeleton>
+                    <app-skeleton type="row"></app-skeleton>
+                    <app-skeleton type="row"></app-skeleton>
+                    <app-skeleton type="row"></app-skeleton>
                 </div>
             </ng-template>
         </div>

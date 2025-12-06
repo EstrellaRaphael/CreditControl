@@ -2,9 +2,12 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, TrendingDown, Wallet, Calendar, ArrowRight, ArrowLeft, Check } from 'lucide-angular';
 import { Observable, BehaviorSubject, switchMap, map } from 'rxjs';
+import { Router } from '@angular/router';
 import { NgxChartsModule, Color, ScaleType, LegendPosition, BarChartModule, PieChartModule } from '@swimlane/ngx-charts';
 
 import { ConfirmModalComponent } from '../shared/confirm-modal/confirm-modal.component';
+import { SkeletonComponent } from '../shared/skeleton/skeleton.component';
+import { WelcomeBannerComponent } from '../shared/welcome-banner/welcome-banner.component';
 import { DashboardService } from '../../services/dashboard';
 import { Cartao, Parcela } from '../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
@@ -12,12 +15,17 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, NgxChartsModule, ConfirmModalComponent],
+  imports: [CommonModule, LucideAngularModule, NgxChartsModule, ConfirmModalComponent, SkeletonComponent, WelcomeBannerComponent],
   templateUrl: './dashboard.html'
 })
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
   private toastr = inject(ToastrService);
+  private router = inject(Router); // Add Router
+
+  navigateToCartoes = () => {
+    this.router.navigate(['/cartoes']);
+  };
 
   // Controle de Data
   currentDate = new Date();

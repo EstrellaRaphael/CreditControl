@@ -8,11 +8,13 @@ import { Observable } from 'rxjs';
 import { Categoria } from '../../../models/core.types';
 import { ToastrService } from 'ngx-toastr';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 
 @Component({
     selector: 'app-categorias-page',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, ConfirmModalComponent],
+    imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, ConfirmModalComponent, SkeletonComponent, EmptyStateComponent],
     templateUrl: './categorias-page.html'
 })
 export class CategoriasPageComponent {

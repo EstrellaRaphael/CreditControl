@@ -8,13 +8,15 @@
         </div>
 
         <div class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
-            <button type="button" (click)="mesAnterior()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button type="button" (click)="mesAnterior()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Mês anterior">
                 <lucide-icon [img]="icons.chevronLeft" class="w-5 h-5 text-gray-600"></lucide-icon>
             </button>
             <span class="px-4 py-2 font-bold text-gray-900 min-w-[160px] text-center capitalize">
                 {{ getNomeMes(mesAtual$.value) }} {{ anoAtual$.value }}
             </span>
-            <button type="button" (click)="proximoMes()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button type="button" (click)="proximoMes()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Próximo mês">
                 <lucide-icon [img]="icons.chevronRight" class="w-5 h-5 text-gray-600"></lucide-icon>
             </button>
         </div>
@@ -65,8 +67,12 @@
     </div>
 
     <!-- Loading -->
-    <div *ngIf="isLoading" class="py-16 text-center">
-        <div class="animate-pulse text-gray-500">Carregando...</div>
+    <div *ngIf="isLoading" class="space-y-3 mt-6">
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
+        <app-skeleton type="row"></app-skeleton>
     </div>
 
     <!-- Lista de Parcelas -->
@@ -83,88 +89,129 @@
         </div>
 
         <!-- Sem parcelas -->
-        <div *ngIf="filteredParcelas.length === 0" class="py-16 text-center">
-            <div
-                class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                <lucide-icon [img]="icons.calendar" class="w-10 h-10 text-gray-300"></lucide-icon>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900">Nenhuma parcela</h3>
-            <p class="text-gray-500 mt-1">Não há parcelas para este mês{{ hasActiveFilters() ? ' com os filtros
-                aplicados' : '' }}.</p>
-            <button *ngIf="hasActiveFilters()" type="button" (click)="clearFilters()"
-                class="mt-4 text-primary font-bold hover:underline">
-                Limpar filtros
-            </button>
+        <!-- Sem parcelas -->
+        <div *ngIf="filteredParcelas.length === 0">
+            <app-empty-state type="parcela"
+                [title]="hasActiveFilters() ? 'Nenhuma parcela encontrada' : 'Nenhuma parcela'"
+                [description]="hasActiveFilters() ? 'Tente ajustar os filtros para encontrar o que procura.' : 'Não há parcelas para este mês.'"
+                [actionLabel]="hasActiveFilters() ? 'Limpar Filtros' : ''" [actionCallback]="clearFilters.bind(this)">
+            </app-empty-state>
         </div>
 
         <!-- Lista -->
         <div *ngFor="let parcela of filteredParcelas"
-            class="group grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center">
+            class="group bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
 
-            <!-- Compra -->
-            <div class="md:col-span-4">
-                <div class="font-bold text-gray-900 flex items-center gap-2">
-                    {{ parcela.nomeCompra }}
-                    <span *ngIf="parcela.compraStatus === 'cancelada'"
-                        class="px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100">
-                        Cancelada
+            <!-- Desktop View -->
+            <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 items-center">
+                <!-- Compra -->
+                <div class="col-span-4">
+                    <div class="font-bold text-gray-900 flex items-center gap-2">
+                        {{ parcela.nomeCompra }}
+                        <span *ngIf="parcela.compraStatus === 'cancelada'"
+                            class="px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100">
+                            Cancelada
+                        </span>
+                    </div>
+                    <div class="text-sm text-gray-500 flex items-center gap-2 mt-0.5">
+                        <span *ngIf="parcela.tipoCompra === 'recorrente'"
+                            class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium border border-blue-100">
+                            Assinatura
+                        </span>
+                        <span *ngIf="parcela.tipoCompra !== 'recorrente'"
+                            class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium border border-gray-200">
+                            {{ parcela.numeroParcela }}/{{ parcela.totalParcelas }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Cartão -->
+                <div class="col-span-2 flex items-center gap-2">
+                    <lucide-icon [img]="icons.card" class="w-4 h-4 text-gray-400"></lucide-icon>
+                    <span class="text-sm text-gray-600 truncate">{{ parcela.nomeCartao }}</span>
+                </div>
+
+                <!-- Valor -->
+                <div class="col-span-2">
+                    <span class="font-bold text-gray-900">{{ formatMoney(parcela.valor) }}</span>
+                </div>
+
+                <!-- Status -->
+                <div class="col-span-2 flex justify-center">
+                    <span *ngIf="parcela.status === 'PAGO'"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
+                        <lucide-icon [img]="icons.check" class="w-3.5 h-3.5"></lucide-icon>
+                        Pago
+                    </span>
+                    <span *ngIf="parcela.status === 'PENDENTE'"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold border border-yellow-100">
+                        Pendente
                     </span>
                 </div>
-                <div class="text-sm text-gray-500 flex items-center gap-2 mt-0.5">
-                    <!-- For recurrent purchases -->
-                    <span *ngIf="parcela.tipoCompra === 'recorrente'"
-                        class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium border border-blue-100">
-                        Assinatura
-                    </span>
-                    <!-- For installment purchases -->
-                    <span *ngIf="parcela.tipoCompra !== 'recorrente'"
-                        class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium border border-gray-200">
-                        {{ parcela.numeroParcela }}/{{ parcela.totalParcelas }}
-                    </span>
+
+                <!-- Ações -->
+                <div class="col-span-2 flex justify-center gap-2">
+                    <button type="button" *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
+                        class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold hover:bg-primary-700 transition-colors shadow-sm">
+                        Pagar
+                    </button>
+
+                    <button type="button"
+                        *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
+                        (click)="confirmarCancelamento(parcela)"
+                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Cancelar assinatura">
+                        <lucide-icon [img]="icons.xCircle" class="w-4 h-4"></lucide-icon>
+                    </button>
                 </div>
             </div>
 
-            <!-- Cartão -->
-            <div class="md:col-span-2 flex items-center gap-2">
-                <lucide-icon [img]="icons.card" class="w-4 h-4 text-gray-400"></lucide-icon>
-                <span class="text-sm text-gray-600 truncate">{{ parcela.nomeCartao }}</span>
+            <!-- Mobile View -->
+            <div class="md:hidden p-4 flex justify-between items-start">
+                <div class="flex-1 space-y-1 pr-2">
+                    <div class="font-bold text-gray-900 leading-tight break-words">{{ parcela.nomeCompra }}</div>
+
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        <span class="flex items-center gap-1">
+                            <lucide-icon [img]="icons.card" class="w-3 h-3"></lucide-icon>
+                            {{ parcela.nomeCartao }}
+                        </span>
+                        <span>•</span>
+                        <span *ngIf="parcela.tipoCompra !== 'recorrente'">{{ parcela.numeroParcela }}/{{
+                            parcela.totalParcelas }}</span>
+                        <span *ngIf="parcela.tipoCompra === 'recorrente'">Assinatura</span>
+                    </div>
+
+                    <div class="pt-1 flex items-center gap-2">
+                        <span *ngIf="parcela.status === 'PAGO'"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                            <lucide-icon [img]="icons.check" class="w-3 h-3"></lucide-icon> Pago
+                        </span>
+                        <span *ngIf="parcela.status === 'PENDENTE'"
+                            class="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">Pendente</span>
+                        <span *ngIf="parcela.compraStatus === 'cancelada'"
+                            class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Cancelada</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-3 shrink-0">
+                    <div class="font-bold text-gray-900 text-lg">{{ formatMoney(parcela.valor) }}</div>
+
+                    <div class="flex gap-2">
+                        <button *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
+                            class="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm hover:bg-primary-700 active:scale-95 transition-all">
+                            Pagar
+                        </button>
+
+                        <button *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
+                            (click)="confirmarCancelamento(parcela)"
+                            class="p-1.5 bg-red-50 text-red-500 rounded-lg active:scale-95 transition-all">
+                            <lucide-icon [img]="icons.xCircle" class="w-5 h-5"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <!-- Valor -->
-            <div class="md:col-span-2">
-                <span class="font-bold text-gray-900">{{ formatMoney(parcela.valor) }}</span>
-            </div>
-
-            <!-- Status -->
-            <div class="md:col-span-2 flex justify-center">
-                <span *ngIf="parcela.status === 'PAGO'"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
-                    <lucide-icon [img]="icons.check" class="w-3.5 h-3.5"></lucide-icon>
-                    Pago
-                </span>
-                <span *ngIf="parcela.status === 'PENDENTE'"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold border border-yellow-100">
-                    Pendente
-                </span>
-            </div>
-
-            <!-- Ações -->
-            <div class="md:col-span-2 flex justify-center gap-2">
-                <!-- Botão Pagar -->
-                <button type="button" *ngIf="parcela.status === 'PENDENTE'" (click)="confirmarPagamento(parcela)"
-                    class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold hover:bg-primary-700 transition-colors shadow-sm">
-                    Pagar
-                </button>
-
-                <!-- Botão Cancelar Assinatura (só para recorrentes ativas) -->
-                <button type="button"
-                    *ngIf="parcela.tipoCompra === 'recorrente' && parcela.compraStatus !== 'cancelada'"
-                    (click)="confirmarCancelamento(parcela)"
-                    class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Cancelar assinatura">
-                    <lucide-icon [img]="icons.xCircle" class="w-4 h-4"></lucide-icon>
-                </button>
-            </div>
         </div>
     </div>
 </div>

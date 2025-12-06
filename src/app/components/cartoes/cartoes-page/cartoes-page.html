@@ -13,79 +13,97 @@
         </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div *ngIf="cartoes$ | async as cartoes; else loading">
 
-        <!-- Card Item (Physical Look) -->
-        <div *ngFor="let cartao of cartoes$ | async"
-            class="group relative h-[220px] rounded-2xl p-6 text-white shadow-xl transition-transform hover:-translate-y-1 duration-300 flex flex-col justify-between overflow-hidden"
-            [style.background]="'linear-gradient(135deg, ' + cartao.cor + ', #1a1a1a)'">
+        <!-- Grid with Cards -->
+        <div *ngIf="cartoes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Card Item (Physical Look) -->
+            <div *ngFor="let cartao of cartoes"
+                class="group relative h-[220px] rounded-2xl p-6 text-white shadow-xl transition-transform hover:-translate-y-1 duration-300 flex flex-col justify-between overflow-hidden"
+                [style.background]="'linear-gradient(135deg, ' + cartao.cor + ', #1a1a1a)'">
 
-            <!-- Glass Effect Overlay -->
-            <div class="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
-            <div
-                class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3">
-            </div>
-
-            <!-- Card Content -->
-            <div class="relative z-10 flex justify-between items-start">
-                <div>
-                    <h3 class="text-xl font-bold tracking-wide">{{ cartao.nome }}</h3>
-                    <span class="text-xs font-medium opacity-80 uppercase tracking-wider">{{ cartao.bandeira }}</span>
-                </div>
-                <lucide-icon [img]="icons.card" class="w-8 h-8 opacity-80"></lucide-icon>
-            </div>
-
-            <div class="relative z-10 space-y-4">
-                <div>
-                    <div class="flex justify-between text-xs mb-1.5 opacity-90">
-                        <span>Utilizado</span>
-                        <span>{{ getPorcentagemUso(cartao.usado, cartao.limiteTotal) | number:'1.0-0' }}%</span>
-                    </div>
-                    <div
-                        class="w-full bg-black/20 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-white/10">
-                        <div class="h-full bg-white/90 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                            [style.width.%]="getPorcentagemUso(cartao.usado, cartao.limiteTotal)"></div>
-                    </div>
-                    <div class="flex justify-between mt-1">
-                        <span class="text-sm font-bold">{{ formatMoney(cartao.usado) }}</span>
-                        <span class="text-xs opacity-70">de {{ formatMoney(cartao.limiteTotal) }}</span>
-                    </div>
+                <!-- Glass Effect Overlay -->
+                <div class="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
+                <div
+                    class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3">
                 </div>
 
-                <div class="flex justify-between items-end pt-2 border-t border-white/10">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] uppercase tracking-wider opacity-60">Vencimento</span>
-                        <span class="font-medium">Dia {{ cartao.diaVencimento }}</span>
+                <!-- Card Content -->
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <h3 class="text-xl font-bold tracking-wide">{{ cartao.nome }}</h3>
+                        <span class="text-xs font-medium opacity-80 uppercase tracking-wider">{{ cartao.bandeira
+                            }}</span>
+                    </div>
+                    <lucide-icon [img]="icons.card" class="w-8 h-8 opacity-80"></lucide-icon>
+                </div>
+
+                <div class="relative z-10 space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5 opacity-90">
+                            <span>Utilizado</span>
+                            <span>{{ getPorcentagemUso(cartao.usado, cartao.limiteTotal) | number:'1.0-0' }}%</span>
+                        </div>
+                        <div
+                            class="w-full bg-black/20 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-white/10">
+                            <div class="h-full bg-white/90 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                [style.width.%]="getPorcentagemUso(cartao.usado, cartao.limiteTotal)"></div>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-sm font-bold">{{ formatMoney(cartao.usado) }}</span>
+                            <span class="text-xs opacity-70">de {{ formatMoney(cartao.limiteTotal) }}</span>
+                        </div>
                     </div>
 
-                    <!-- Actions (Visible on hover for desktop, always for mobile via menu or simple buttons) -->
-                    <div class="flex gap-2">
-                        <button (click)="editCartao(cartao)"
-                            class="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md"
-                            title="Editar">
-                            <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
-                        </button>
-                        <button (click)="deleteCartao(cartao)"
-                            class="p-2 rounded-lg bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
-                            title="Excluir">
-                            <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
-                        </button>
+                    <div class="flex justify-between items-end pt-2 border-t border-white/10">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase tracking-wider opacity-60">Vencimento</span>
+                            <span class="font-medium">Dia {{ cartao.diaVencimento }}</span>
+                        </div>
+
+                        <!-- Actions (Visible on hover for desktop, always for mobile via menu or simple buttons) -->
+                        <div class="flex gap-2">
+                            <button (click)="editCartao(cartao)"
+                                class="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md"
+                                title="Editar">
+                                <lucide-icon [img]="icons.edit" class="w-4 h-4"></lucide-icon>
+                            </button>
+                            <button (click)="deleteCartao(cartao)"
+                                class="p-2 rounded-lg bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
+                                title="Excluir">
+                                <lucide-icon [img]="icons.trash" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Add New Card Button -->
+            <button (click)="openNewCartaoModal()"
+                class="h-[220px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-2xl p-6 hover:border-primary hover:bg-primary-50/30 transition-all group text-gray-400 hover:text-primary">
+                <div
+                    class="w-14 h-14 rounded-full bg-gray-100 group-hover:bg-primary-100 flex items-center justify-center mb-4 transition-colors shadow-sm">
+                    <lucide-icon [img]="icons.plus"
+                        class="w-7 h-7 text-gray-500 group-hover:text-primary"></lucide-icon>
+                </div>
+                <span class="font-medium text-lg">Adicionar Cartão</span>
+            </button>
         </div>
 
-        <!-- Add New Card Button -->
-        <button (click)="openNewCartaoModal()"
-            class="h-[220px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-2xl p-6 hover:border-primary hover:bg-primary-50/30 transition-all group text-gray-400 hover:text-primary">
-            <div
-                class="w-14 h-14 rounded-full bg-gray-100 group-hover:bg-primary-100 flex items-center justify-center mb-4 transition-colors shadow-sm">
-                <lucide-icon [img]="icons.plus" class="w-7 h-7 text-gray-500 group-hover:text-primary"></lucide-icon>
-            </div>
-            <span class="font-medium text-lg">Adicionar Cartão</span>
-        </button>
-
+        <!-- Empty State -->
+        <app-empty-state *ngIf="cartoes.length === 0" type="cartao" title="Nenhum cartão cadastrado"
+            description="Comece adicionando seus cartões de crédito para controlar suas faturas."
+            actionLabel="Adicionar Cartão" [actionCallback]="openNewCartaoModal.bind(this)">
+        </app-empty-state>
     </div>
+
+    <ng-template #loading>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <app-skeleton type="card"></app-skeleton>
+            <app-skeleton type="card"></app-skeleton>
+            <app-skeleton type="card"></app-skeleton>
+        </div>
+    </ng-template>
 </div>
 
 <app-cartao-modal [isOpen]="isModalOpen" [cartaoToEdit]="editingCartao" (close)="closeModal()"></app-cartao-modal>

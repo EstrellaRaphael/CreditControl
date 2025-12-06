@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { Compra, Categoria } from '../../../models/core.types';
 import { Subscription } from 'rxjs';
 import { LucideAngularModule, Plus, ShoppingBag, Calendar, CreditCard, Trash2, Search, Filter, X, Edit } from 'lucide-angular';
@@ -7,13 +8,15 @@ import { CompraService } from '../../../services/compra';
 import { CategoriaService } from '../../../services/categoria';
 import { CompraModalComponent } from '../compra-modal/compra-modal';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { ToastrService } from 'ngx-toastr';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-compras-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CompraModalComponent, ConfirmModalComponent, ReactiveFormsModule],
+  imports: [CommonModule, LucideAngularModule, CompraModalComponent, ConfirmModalComponent, ReactiveFormsModule, SkeletonComponent, EmptyStateComponent],
   templateUrl: './compras-page.html'
 })
 export class ComprasPageComponent implements OnInit, OnDestroy {
@@ -21,6 +24,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   private categoriaService = inject(CategoriaService);
   private toastr = inject(ToastrService);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
 
   compras: Compra[] = [];
   categorias: Categoria[] = [];
@@ -60,6 +64,14 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit() {
+    // Check for ?action=new query param from FAB
+    const querySub = this.route.queryParams.subscribe(params => {
+      if (params['action'] === 'new') {
+        setTimeout(() => this.openNewCompraModal(), 100);
+      }
+    });
+    this.subscriptions.push(querySub);
+
     const comprasSub = this.compraService.getCompras().subscribe(data => {
       this.compras = data;
       this.isLoading = false;
